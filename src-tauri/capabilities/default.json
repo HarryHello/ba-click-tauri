@@ -8,6 +8,7 @@
     "core:window:allow-set-ignore-cursor-events",
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-visible-on-all-workspaces",
+    "core:window:allow-set-focusable",
     "core:window:allow-set-position",
     "core:window:allow-set-size",
     "core:window:allow-current-monitor",

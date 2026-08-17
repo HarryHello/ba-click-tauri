@@ -1,36 +1,62 @@
 use serde::Serialize;
+use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
 
 #[derive(Clone, Serialize)]
 struct MouseEventPayload {
     kind: String,
-    button: String,
-}
-
-fn button_name(event_type: rdev::EventType) -> String {
-    match event_type {
-        rdev::EventType::ButtonPress(button) | rdev::EventType::ButtonRelease(button) => {
-            format!("{button:?}")
-        }
-        _ => String::new(),
-    }
+    x: f64,
+    y: f64,
+    button: Option<String>,
 }
 
 fn start_global_listener(app: AppHandle) {
     thread::spawn(move || {
-        let result = rdev::listen(move |event: rdev::Event| {
-            let kind = match event.event_type {
-                rdev::EventType::ButtonPress(_) => Some("down"),
-                rdev::EventType::ButtonRelease(_) => Some("up"),
-                _ => None,
-            };
+        let last_position = Arc::new(Mutex::new((0.0_f64, 0.0_f64)));
+        let last_move_at = Arc::new(Mutex::new(Instant::now() - Duration::from_secs(1)));
 
-            if let Some(kind) = kind {
-                let payload = MouseEventPayload {
-                    kind: kind.to_string(),
-                    button: button_name(event.event_type),
-                };
+        let result = rdev::listen(move |event: rdev::Event| {
+            let mut payload = None;
+
+            match &event.event_type {
+                rdev::EventType::MouseMove { x, y } => {
+                    *last_position.lock().unwrap() = (*x, *y);
+
+                    let mut last_move_at = last_move_at.lock().unwrap();
+                    if last_move_at.elapsed() >= Duration::from_millis(8) {
+                        *last_move_at = Instant::now();
+                        payload = Some(MouseEventPayload {
+                            kind: "move".to_string(),
+                            x: *x,
+                            y: *y,
+                            button: None,
+                        });
+                    }
+                }
+                rdev::EventType::ButtonPress(button) => {
+                    let (x, y) = *last_position.lock().unwrap();
+                    payload = Some(MouseEventPayload {
+                        kind: "down".to_string(),
+                        x,
+                        y,
+                        button: Some(format!("{button:?}")),
+                    });
+                }
+                rdev::EventType::ButtonRelease(button) => {
+                    let (x, y) = *last_position.lock().unwrap();
+                    payload = Some(MouseEventPayload {
+                        kind: "up".to_string(),
+                        x,
+                        y,
+                        button: Some(format!("{button:?}")),
+                    });
+                }
+                _ => {}
+            }
+
+            if let Some(payload) = payload {
                 let _ = app.emit("mouse-event", payload);
             }
         });

@@ -1,7 +1,6 @@
 import { BAClickFX } from 'ba-click-fx';
 import {
   currentMonitor,
-  cursorPosition,
   getCurrentWindow,
   PhysicalPosition,
   PhysicalSize,
@@ -13,7 +12,6 @@ const canvas = document.getElementById('fx');
 
 const state = {
   monitor: null,
-  origin: { x: 0, y: 0 },
   scale: 1,
   fx: null,
 };
@@ -22,11 +20,12 @@ function toCanvasPoint(point) {
   if (!state.monitor) {
     return { x: point.x, y: point.y };
   }
-  // Tauri cursorPosition()/monitor coordinates are Physical (device pixels).
-  // The canvas viewport is in CSS pixels, so divide by the display scale factor.
+
+  // rdev's CGEvent coordinates are in macOS global display points.
+  // Tauri's monitor.position is physical, so convert it to logical first.
   return {
-    x: (point.x - state.origin.x) / state.scale,
-    y: (point.y - state.origin.y) / state.scale,
+    x: point.x - state.monitor.position.x / state.scale,
+    y: point.y - state.monitor.position.y / state.scale,
   };
 }
 
@@ -35,30 +34,32 @@ async function setupWindow() {
   state.monitor = monitor;
 
   if (monitor) {
-    state.origin = {
-      x: monitor.position.x,
-      y: monitor.position.y,
-    };
     state.scale = monitor.scaleFactor;
 
-    await win.setPosition(new PhysicalPosition(state.origin.x, state.origin.y));
+    await win.setPosition(new PhysicalPosition(monitor.position.x, monitor.position.y));
     await win.setSize(new PhysicalSize(monitor.size.width, monitor.size.height));
   }
 
   await win.setAlwaysOnTop(true);
   await win.setVisibleOnAllWorkspaces(true);
   await win.setIgnoreCursorEvents(true);
+
+  // The overlay must never take keyboard/IME focus. If it does, typing in
+  // another app (e.g. Chinese input) can crash or misbehave.
+  await win.setFocusable(false);
 }
 
 function createFx() {
-  // Use the exact web effect library, with manual input so the desktop host
-  // can feed global mouse events into it.
+  // Use the exact web effect library with manual input from the global mouse
+  // listener. Force the enhanced renderer + WebGL2 bloom so the glow is kept.
   state.fx = new BAClickFX({
     target: canvas,
     inputSource: 'manual',
     outputCompositing: 'browser-overlay',
     hostCompositingSurface: 'transparent-window',
-    effectBackend: 'auto',
+    effectBackend: 'webgl2',
+    renderingMode: 'enhanced',
+    bloomBackend: 'webgl2',
     clickEnabled: true,
     trailEnabled: true,
     trailAlways: true,
@@ -66,10 +67,10 @@ function createFx() {
   });
 }
 
-async function onMouseButton(event) {
+function onMouseEvent(event) {
   if (!state.fx) return;
 
-  const point = toCanvasPoint(await cursorPosition());
+  const point = toCanvasPoint({ x: event.x, y: event.y });
   const input = {
     x: point.x,
     y: point.y,
@@ -77,36 +78,21 @@ async function onMouseButton(event) {
     pointerType: 'mouse',
   };
 
-  if (event.kind === 'down') {
+  if (event.kind === 'move') {
+    state.fx.pointerMove(input);
+  } else if (event.kind === 'down') {
     state.fx.pointerDown(input);
   } else if (event.kind === 'up') {
     state.fx.pointerUp(1);
   }
 }
 
-function startMouseMovePolling() {
-  // Moves are polled through Tauri's native cursor-position API instead of
-  // flooding the IPC bridge with a Rust-side global event stream.
-  setInterval(async () => {
-    if (!state.fx) return;
-
-    const point = toCanvasPoint(await cursorPosition());
-    state.fx.pointerMove({
-      x: point.x,
-      y: point.y,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-  }, 16);
-}
-
 async function main() {
   await setupWindow();
   createFx();
-  startMouseMovePolling();
 
   await listen('mouse-event', (event) => {
-    onMouseButton(event.payload);
+    onMouseEvent(event.payload);
   });
 }
 

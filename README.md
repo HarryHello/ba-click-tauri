@@ -8,7 +8,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window co
 
 - Transparent click-through overlay (clicks pass to apps underneath)
 - Global left/right/middle mouse button events through a macOS event tap
-- Mouse-position polling through Tauri's native `cursorPosition()` API
+- Global mouse-move events streamed from the same Rust listener
 - Uses the original `ba-click-fx` npm package — no effect rewrite
 - Lightweight: system WKWebView + small Rust process
 
@@ -44,8 +44,8 @@ npm run tauri build
 
 1. Tauri opens a transparent window over the primary monitor.
 2. The window calls `setIgnoreCursorEvents(true)`, so it never intercepts clicks.
-3. A Rust `rdev` global listener reports mouse-down/up events to the webview.
-4. The frontend polls `cursorPosition()` for mouse movement and feeds it to `BAClickFX` via `inputSource: 'manual'`.
+3. A Rust `rdev` global listener streams mouse move/down/up events to the webview.
+4. The frontend feeds those coordinates to `BAClickFX` via `inputSource: 'manual'`.
 
 ## Project layout
 
