@@ -12,6 +12,7 @@ const canvas = document.getElementById('fx');
 
 const state = {
   monitor: null,
+  origin: { x: 0, y: 0 },
   scale: 1,
   fx: null,
 };
@@ -21,11 +22,12 @@ function toCanvasPoint(point) {
     return { x: point.x, y: point.y };
   }
 
-  // rdev's CGEvent coordinates are in macOS global display points.
-  // Tauri's monitor.position is physical, so convert it to logical first.
+  // rdev/CGEvent coordinates are physical pixels relative to the desktop's
+  // top-left corner. The window covers the monitor work area (below the macOS
+  // menu bar), so subtract that work-area origin and convert to CSS pixels.
   return {
-    x: point.x - state.monitor.position.x / state.scale,
-    y: point.y - state.monitor.position.y / state.scale,
+    x: (point.x - state.origin.x) / state.scale,
+    y: (point.y - state.origin.y) / state.scale,
   };
 }
 
@@ -35,9 +37,13 @@ async function setupWindow() {
 
   if (monitor) {
     state.scale = monitor.scaleFactor;
+    state.origin = {
+      x: monitor.workArea.position.x,
+      y: monitor.workArea.position.y,
+    };
 
-    await win.setPosition(new PhysicalPosition(monitor.position.x, monitor.position.y));
-    await win.setSize(new PhysicalSize(monitor.size.width, monitor.size.height));
+    await win.setPosition(new PhysicalPosition(state.origin.x, state.origin.y));
+    await win.setSize(new PhysicalSize(monitor.workArea.size.width, monitor.workArea.size.height));
   }
 
   await win.setAlwaysOnTop(true);
@@ -45,13 +51,15 @@ async function setupWindow() {
   await win.setIgnoreCursorEvents(true);
 
   // The overlay must never take keyboard/IME focus. If it does, typing in
-  // another app (e.g. Chinese input) can crash or misbehave.
+  // another app (even English) can crash or misbehave.
   await win.setFocusable(false);
 }
 
 function createFx() {
   // Use the exact web effect library with manual input from the global mouse
-  // listener. Force the enhanced renderer + WebGL2 bloom so the glow is kept.
+  // listener. Force enhanced rendering + WebGL2 bloom; if WKWebView cannot
+  // create a WebGL2 context, the library falls back to software bloom so the
+  // glow is still preserved instead of a weak native shadow path.
   state.fx = new BAClickFX({
     target: canvas,
     inputSource: 'manual',
@@ -59,11 +67,12 @@ function createFx() {
     hostCompositingSurface: 'transparent-window',
     effectBackend: 'webgl2',
     renderingMode: 'enhanced',
-    bloomBackend: 'webgl2',
+    bloomBackend: 'software',
     clickEnabled: true,
     trailEnabled: true,
     trailAlways: true,
     inputSamplingRate: 240,
+    maxDpr: Math.min(window.devicePixelRatio || 1, 2),
   });
 }
 

@@ -11,7 +11,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["macos-private-api"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-rdev = "0.5.3"
+core-foundation = "0.10"
+core-graphics = "0.25"
 
 [lib]
 name = "ba_click_tauri_lib"
