@@ -21,7 +21,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - Converted to an **NSPanel** with `FullScreenAuxiliary` + `CanJoinAllSpaces`, so it can float above **fullscreen apps**
 - App runs as an `Accessory` (no Dock icon) since it is a pure overlay utility
 - Uses the original `ba-click-fx` npm package — no effect rewrite
-- Built-in management panel: unified effect size, opacity (disk + shards only), trail width, bloom, refresh rate and quality presets
+- Built-in management panel with native macOS vibrancy (frosted glass): unified effect size, opacity (disk + shards only), trail width, bloom, refresh rate and quality presets
 - Lightweight: system WKWebView + small Rust process
 
 **中文**
@@ -34,7 +34,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - 使用 **NSPanel**（`FullScreenAuxiliary` + `CanJoinAllSpaces`），可覆盖在**全屏应用**之上
 - 以 `Accessory` 模式运行（无 Dock 图标），是纯悬浮工具
 - 直接使用原版 `ba-click-fx` npm 包，不重写特效
-- 内置管理面板：统一特效大小、不透明度（仅圆盘 + 碎片）、拖尾粗细、辉光、刷新率与画质预设
+- 内置管理面板（原生 macOS 毛玻璃 vibrancy）：统一特效大小、不透明度（仅圆盘 + 碎片）、拖尾粗细、辉光、刷新率与画质预设
 - 轻量：系统 WKWebView + 小体积 Rust 进程
 
 ---

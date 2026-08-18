@@ -92,6 +92,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-nspanel",
+ "window-vibrancy",
 ]
 
 [[package]]

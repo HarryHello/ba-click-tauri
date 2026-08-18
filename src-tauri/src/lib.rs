@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use tauri::{generate_handler, AppHandle, Emitter, Manager, WebviewWindow};
 #[allow(deprecated)] // tauri-nspanel v2 re-exports the old cocoa wrappers
 use tauri_nspanel::{cocoa::appkit::NSWindowCollectionBehavior, WebviewWindowExt};
+use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial, NSVisualEffectState};
 
 #[derive(Clone, Serialize)]
 struct MouseEventPayload {
@@ -168,6 +169,22 @@ fn init_panel(app_handle: &AppHandle) {
     println!("[info] overlay converted to NSWindowCollectionBehaviorFullScreenAuxiliary panel");
 }
 
+fn apply_panel_vibrancy(app_handle: &AppHandle) {
+    let panel = app_handle
+        .get_webview_window("panel")
+        .expect("panel window not found");
+
+    match apply_vibrancy(
+        &panel,
+        NSVisualEffectMaterial::HudWindow,
+        Some(NSVisualEffectState::Active),
+        Some(12.0),
+    ) {
+        Ok(()) => println!("[info] applied native vibrancy to management panel"),
+        Err(error) => eprintln!("[info] failed to apply vibrancy to management panel: {error}"),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -177,6 +194,7 @@ pub fn run() {
             // Hide the Dock icon: this is a pure overlay utility.
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             init_panel(app.handle());
+            apply_panel_vibrancy(app.handle());
             start_global_listener(app.handle().clone());
             Ok(())
         })

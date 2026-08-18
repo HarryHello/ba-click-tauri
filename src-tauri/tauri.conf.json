@@ -33,9 +33,11 @@
         "url": "panel.html",
         "width": 360,
         "height": 560,
+        "transparent": true,
         "decorations": true,
         "alwaysOnTop": true,
         "resizable": false,
+        "shadow": true,
         "visible": true
       }
     ],
