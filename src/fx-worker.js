@@ -39,13 +39,17 @@ self.addEventListener('message', (event) => {
         trailAlways: true,
         inputSamplingRate: 30,
         maxDpr: 1,
+        overlayAlphaLimit: 0.85,
       });
 
-      // Keep the same tuning as the main-thread version: cheaper software bloom
-      // and click brightness balanced against the trail.
+      // Keep the same tuning as the main-thread version: cheaper software bloom,
+      // reduced click brightness, and a softer, semi-transparent light-blue
+      // centre disk instead of a solid white blob.
       fx.setFxParam('bloom.resolutionScale', 0.3);
       fx.setFxParam('bloom.diffusion', 5);
-      fx.setFxParam('bloom.clickEmissionScale', 0.5);
+      fx.setFxParam('bloom.clickEmissionScale', 0.45);
+      fx.setFxParam('bloom.diskEmission', 0.8);
+      fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
 
       fx.resize(payload.width, payload.height, payload.dpr);
       sendStatus('worker-init', {

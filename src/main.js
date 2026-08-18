@@ -153,11 +153,14 @@ function createFallbackFx() {
     trailAlways: true,
     inputSamplingRate: 30,
     maxDpr: 1,
+    overlayAlphaLimit: 0.85,
   });
 
   state.fx.setFxParam('bloom.resolutionScale', 0.3);
   state.fx.setFxParam('bloom.diffusion', 5);
-  state.fx.setFxParam('bloom.clickEmissionScale', 0.5);
+  state.fx.setFxParam('bloom.clickEmissionScale', 0.45);
+  state.fx.setFxParam('bloom.diskEmission', 0.8);
+  state.fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
 
   logStatus('fallback', {
     requested: {
