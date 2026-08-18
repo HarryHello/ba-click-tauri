@@ -43,7 +43,7 @@ function getViewport() {
   return {
     width: rect.width,
     height: rect.height,
-    dpr: Math.min(window.devicePixelRatio || 1, 1),
+    dpr: Math.min(window.devicePixelRatio || 1, 2),
   };
 }
 
@@ -223,7 +223,7 @@ function handlePanelCommand(command) {
       opacity: 1,
       clickTimeScale: 1,
       inputSamplingRate: 60,
-      maxDpr: 1,
+      maxDpr: 2,
     });
     state.fx.resetFxConfig();
     applyFxPatches(state.fx);

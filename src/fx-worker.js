@@ -2,6 +2,7 @@ import { BAClickFX } from 'ba-click-fx';
 import { applyFxPatches, FX_BASE_OPTIONS } from './fx-config.js';
 
 let fx = null;
+let viewport = { width: 0, height: 0, dpr: 1 };
 
 function sendStatus(label, extra = {}) {
   const cfg = fx?.getConfig();
@@ -56,7 +57,8 @@ self.addEventListener('message', (event) => {
       fx = new BAClickFX(options);
       applyFxPatches(fx);
 
-      fx.resize(payload.width, payload.height, payload.dpr);
+      viewport = { width: payload.width, height: payload.height, dpr: payload.dpr };
+      fx.resize(viewport.width, viewport.height, viewport.dpr);
       sendStatus('worker-init', {
         requested: {
           effectBackend: options.effectBackend,
@@ -69,11 +71,15 @@ self.addEventListener('message', (event) => {
     }
 
     case 'resize':
-      fx?.resize(payload.width, payload.height, payload.dpr);
+      viewport = { width: payload.width, height: payload.height, dpr: payload.dpr };
+      fx?.resize(viewport.width, viewport.height, viewport.dpr);
       break;
 
     case 'updateConfig':
       fx?.updateConfig(payload);
+      if (payload && 'maxDpr' in payload) {
+        fx?.resize(viewport.width, viewport.height, viewport.dpr);
+      }
       break;
 
     case 'setFxParams':
@@ -89,10 +95,11 @@ self.addEventListener('message', (event) => {
         opacity: 1,
         clickTimeScale: 1,
         inputSamplingRate: 60,
-        maxDpr: 1,
+        maxDpr: 2,
       });
       fx?.resetFxConfig();
       applyFxPatches(fx);
+      fx?.resize(viewport.width, viewport.height, viewport.dpr);
       break;
 
     case 'pointerDown':
