@@ -107,6 +107,14 @@ function createFx() {
     maxDpr: 1,
   });
 
+  // Software bloom is the main cost. Lowering resolutionScale and diffusion
+  // keeps the glow visible while cutting the full-screen blur work a lot.
+  state.fx.setFxParam('bloom.resolutionScale', 0.3);
+  state.fx.setFxParam('bloom.diffusion', 5);
+  // Clicks are too bright compared to the trail; scale down only the click
+  // bloom source without changing the trail's glow.
+  state.fx.setFxParam('bloom.clickEmissionScale', 0.5);
+
   logStatus('startup', {
     requested: { effectBackend, bloomBackend, inputSamplingRate },
   }).catch(() => {});
