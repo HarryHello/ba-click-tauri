@@ -158,9 +158,14 @@ function createFallbackFx() {
 
   state.fx.setFxParam('bloom.resolutionScale', 0.3);
   state.fx.setFxParam('bloom.diffusion', 5);
-  state.fx.setFxParam('bloom.clickEmissionScale', 0.45);
-  state.fx.setFxParam('bloom.diskEmission', 0.8);
+  state.fx.setFxParam('bloom.clickEmissionScale', 0.4);
+  state.fx.setFxParam('bloom.diskEmission', 0.7);
   state.fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
+
+  state.fx.setFxParam('trail.width', 4.0);
+  state.fx.setFxParam('trail.geometryWidth', 4.0);
+  state.fx.setFxParam('trail.outerGlowWidth', 16);
+  state.fx.setFxParam('bloom.trailEmission', 30);
 
   logStatus('fallback', {
     requested: {

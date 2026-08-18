@@ -47,9 +47,16 @@ self.addEventListener('message', (event) => {
       // centre disk instead of a solid white blob.
       fx.setFxParam('bloom.resolutionScale', 0.3);
       fx.setFxParam('bloom.diffusion', 5);
-      fx.setFxParam('bloom.clickEmissionScale', 0.45);
-      fx.setFxParam('bloom.diskEmission', 0.8);
+      fx.setFxParam('bloom.clickEmissionScale', 0.4);
+      fx.setFxParam('bloom.diskEmission', 0.7);
       fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
+
+      // Make the trail read as a water-drop shape: a thicker, brighter head at
+      // the pointer that tapers behind it.
+      fx.setFxParam('trail.width', 4.0);
+      fx.setFxParam('trail.geometryWidth', 4.0);
+      fx.setFxParam('trail.outerGlowWidth', 16);
+      fx.setFxParam('bloom.trailEmission', 30);
 
       fx.resize(payload.width, payload.height, payload.dpr);
       sendStatus('worker-init', {
