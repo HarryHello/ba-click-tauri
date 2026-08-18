@@ -22,12 +22,13 @@ function toCanvasPoint(point) {
     return { x: point.x, y: point.y };
   }
 
-  // rdev/CGEvent coordinates are physical pixels relative to the desktop's
-  // top-left corner. The window covers the monitor work area (below the macOS
-  // menu bar), so subtract that work-area origin and convert to CSS pixels.
+  // CGEvent coordinates are logical points relative to the desktop's top-left.
+  // The window covers the monitor work area (below the macOS menu bar), so
+  // subtract the work-area's logical origin. This matches the canvas CSS
+  // coordinate space directly.
   return {
-    x: (point.x - state.origin.x) / state.scale,
-    y: (point.y - state.origin.y) / state.scale,
+    x: point.x - state.origin.x / state.scale,
+    y: point.y - state.origin.y / state.scale,
   };
 }
 
@@ -71,8 +72,8 @@ function createFx() {
     clickEnabled: true,
     trailEnabled: true,
     trailAlways: true,
-    inputSamplingRate: 240,
-    maxDpr: Math.min(window.devicePixelRatio || 1, 2),
+    inputSamplingRate: 60,
+    maxDpr: 1,
   });
 }
 
