@@ -82,13 +82,14 @@ async function logStatus(label, extra = {}) {
 }
 
 function createFx() {
-  // Prefer WebGPU when the system WebView exposes it (macOS Tahoe+ Safari/WKWebView).
-  // It is the GPU-backed path that should be both smooth and keep the full effect.
-  // When it is not available, fall back to the lightest Canvas 2D + native glow
-  // profile so the overlay stays usable.
-  const effectBackend = webgpuAvailable ? 'webgpu' : 'canvas2d';
-  const bloomBackend = webgpuAvailable ? 'webgl2' : 'native';
-  const inputSamplingRate = webgpuAvailable ? 60 : 30;
+  // The log shows WebGPU is exposed by WKWebView but the library cannot
+  // actually create a usable WebGPU/WebGL2 device on the transparent canvas,
+  // so it resolves to canvas2d + native. Native shadow glow is too subtle,
+  // so we explicitly use software bloom: it costs more, but at 1x/30Hz it
+  // should keep the improved frame rate and restore the real glow.
+  const effectBackend = 'canvas2d';
+  const bloomBackend = 'software';
+  const inputSamplingRate = 30;
 
   state.fx = new BAClickFX({
     target: canvas,
