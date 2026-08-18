@@ -89,8 +89,8 @@ function sendRefreshRate() {
 
 const QUALITY = Object.freeze({
   low: { 'bloom.resolutionScale': 0.2, maxDpr: 1 },
-  balanced: { 'bloom.resolutionScale': 0.3, maxDpr: 1 },
-  high: { 'bloom.resolutionScale': 0.45, maxDpr: 2 },
+  balanced: { 'bloom.resolutionScale': 0.3, maxDpr: 2 },
+  high: { 'bloom.resolutionScale': 0.5, maxDpr: 2 },
 });
 
 function sendQuality() {

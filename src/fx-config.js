@@ -11,7 +11,7 @@ export const FX_BASE_OPTIONS = {
   trailEnabled: true,
   trailAlways: true,
   inputSamplingRate: 60,
-  maxDpr: 1,
+  maxDpr: 2,
   overlayAlphaLimit: 0.85,
 };
 

@@ -111,6 +111,7 @@ npm run tauri build
 
 | Parameter / 参数 | Value / 值 | Purpose / 作用 |
 |---|---|---|
+| `maxDpr` | 2 | Render at Retina resolution / 以 Retina 分辨率渲染 |
 | `bloom.resolutionScale` | 0.3 | Cheaper bloom buffers (performance) / 降低 Bloom 缓冲开销（性能） |
 | `bloom.diffusion` | 5 | Less blur work (performance) / 减少模糊计算（性能） |
 | `bloom.clickEmissionScale` | 0.4 | Click glow not too bright / 点击辉光不过亮 |
