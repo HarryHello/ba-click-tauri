@@ -55,7 +55,7 @@ npm run tauri build
 
 ## Current tuning
 
-Applied via `setFxParam()` in `src/fx-worker.js` (kept in sync with the fallback path in `src/main.js`):
+Applied via `applyFxPatches()` in **`src/fx-config.js`** — the single source of truth used by both the Worker renderer and the main-thread fallback. To tune the effect, edit only this file.
 
 | Parameter | Value | Purpose |
 |---|---|---|
@@ -82,6 +82,43 @@ During dev, the terminal prints a status message from the Worker:
 
 > Note: right after `worker-init`, `resolved` may briefly show `pending/native` before the first frame renders. That is expected.
 
+## Exit
+
+The Dock icon is hidden (the app runs as an `Accessory`), so to quit:
+
+- **Dev mode:** press `Ctrl+C` in the terminal running `npm run tauri dev`
+- **Running the app directly:**
+
+```bash
+pkill -f ba-click-tauri
+```
+
+## Troubleshooting
+
+### Effect not triggering or no glow
+- Make sure the app has **Accessibility** permission (System Settings → Privacy & Security → Accessibility). The global mouse listener depends on it.
+- Check the terminal `[webview] worker-init` line:
+  - `webgl2Probe: true` + resolved `webgl2/webgl2` → GPU render path active
+  - `webgl2Probe: false` or resolved `canvas2d/native` → WebView fell back to Canvas 2D
+- Effect look/glow/brightness is tuned in `src/fx-config.js`. Frontend changes hot-reload with `npm run tauri dev`.
+
+### Overlay not showing over a fullscreen app
+- The window must be converted to the NSPanel: startup should print `[info] overlay converted to NSWindowCollectionBehaviorFullScreenAuxiliary panel`.
+- A few capture/exclusive apps isolate their own content; those edge cases are not coverable.
+
+### IME / typing crash or focus stealing
+- This was fixed by using a `NonActivatingPanel` and by no longer calling `setFocusable(false)` on the NSPanel-backed window.
+- If it ever recurs: `pkill -f ba-click-tauri`, restart `npm run tauri dev`, and paste the terminal error.
+
+### Large build cache / disk usage
+- The Rust build cache in `src-tauri/target` can grow large (several GB). It is safe to wipe:
+
+```bash
+cd src-tauri && cargo clean
+```
+
+Then rebuild with `npm run tauri dev` / `npm run tauri build`.
+
 ## Project layout
 
 ```text
@@ -89,10 +126,11 @@ ba-click-tauri/
 ├── index.html           # transparent overlay page
 ├── src/
 │   ├── main.js          # window setup, global mouse wiring, worker forwarding
+│   ├── fx-config.js     # shared BAClickFX options + tuning (single source of truth)
 │   └── fx-worker.js     # BAClickFX inside a Worker (WebGL2 OffscreenCanvas)
 ├── src-tauri/
 │   ├── src/
-│   │   └── lib.rs       # Rust backend + mouse-only CGEventTap + log bridge
+│   │   └── lib.rs       # Rust backend + mouse-only CGEventTap + NSPanel + log bridge
 │   ├── capabilities/
 │   └── tauri.conf.json  # transparent overlay window config
 ```

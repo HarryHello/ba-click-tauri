@@ -7,6 +7,7 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { BAClickFX } from 'ba-click-fx';
+import { applyFxPatches, FX_BASE_OPTIONS } from './fx-config.js';
 
 const win = getCurrentWindow();
 const canvas = document.getElementById('fx');
@@ -142,31 +143,14 @@ function createWorkerRenderer() {
 
 function createFallbackFx() {
   state.fx = new BAClickFX({
+    ...FX_BASE_OPTIONS,
     target: canvas,
-    inputSource: 'manual',
     outputCompositing: 'browser-overlay',
     hostCompositingSurface: 'transparent-window',
     effectBackend: 'canvas2d',
-    renderingMode: 'enhanced',
     bloomBackend: 'software',
-    clickEnabled: true,
-    trailEnabled: true,
-    trailAlways: true,
-    inputSamplingRate: 60,
-    maxDpr: 1,
-    overlayAlphaLimit: 0.85,
   });
-
-  state.fx.setFxParam('bloom.resolutionScale', 0.3);
-  state.fx.setFxParam('bloom.diffusion', 5);
-  state.fx.setFxParam('bloom.clickEmissionScale', 0.4);
-  state.fx.setFxParam('bloom.diskEmission', 0.7);
-  state.fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
-
-  state.fx.setFxParam('trail.width', 4.0);
-  state.fx.setFxParam('trail.geometryWidth', 4.0);
-  state.fx.setFxParam('trail.outerGlowWidth', 16);
-  state.fx.setFxParam('bloom.trailEmission', 30);
+  applyFxPatches(state.fx);
 
   logStatus('fallback', {
     requested: {

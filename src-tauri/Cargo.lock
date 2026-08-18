@@ -89,7 +89,6 @@ dependencies = [
  "core-foundation",
  "core-graphics 0.25.0",
  "serde",
- "serde_json",
  "tauri",
  "tauri-build",
  "tauri-nspanel",

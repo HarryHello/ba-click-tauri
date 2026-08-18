@@ -1,4 +1,5 @@
 import { BAClickFX } from 'ba-click-fx';
+import { applyFxPatches, FX_BASE_OPTIONS } from './fx-config.js';
 
 let fx = null;
 
@@ -35,15 +36,8 @@ self.addEventListener('message', (event) => {
       }
 
       const options = {
+        ...FX_BASE_OPTIONS,
         target: payload.canvas,
-        inputSource: 'manual',
-        renderingMode: 'enhanced',
-        clickEnabled: true,
-        trailEnabled: true,
-        trailAlways: true,
-        inputSamplingRate: 60,
-        maxDpr: 1,
-        overlayAlphaLimit: 0.85,
       };
 
       if (webgl2Probe) {
@@ -60,19 +54,7 @@ self.addEventListener('message', (event) => {
       }
 
       fx = new BAClickFX(options);
-
-      // Keep the same tuning as the main-thread version: reduced click
-      // brightness, a softer semi-transparent light-blue centre disk, and a
-      // water-drop trail shape.
-      fx.setFxParam('bloom.resolutionScale', 0.3);
-      fx.setFxParam('bloom.diffusion', 5);
-      fx.setFxParam('bloom.clickEmissionScale', 0.4);
-      fx.setFxParam('bloom.diskEmission', 0.7);
-      fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
-      fx.setFxParam('trail.width', 4.0);
-      fx.setFxParam('trail.geometryWidth', 4.0);
-      fx.setFxParam('trail.outerGlowWidth', 16);
-      fx.setFxParam('bloom.trailEmission', 30);
+      applyFxPatches(fx);
 
       fx.resize(payload.width, payload.height, payload.dpr);
       sendStatus('worker-init', {
