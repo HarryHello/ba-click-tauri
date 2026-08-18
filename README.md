@@ -11,6 +11,8 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - Effect renders in a **Dedicated Worker + OffscreenCanvas** with **Full WebGL2**
 - Falls back to `canvas2d + software bloom` when WebGL2 is unavailable
 - Window is non-focusable (`focusable: false`), so typing in other apps never steals focus
+- Converted to an **NSPanel** with `FullScreenAuxiliary` + `CanJoinAllSpaces`, so it can float above **fullscreen apps**
+- App runs as an `Accessory` (no Dock icon) since it is a pure overlay utility
 - Uses the original `ba-click-fx` npm package — no effect rewrite
 - Lightweight: system WKWebView + small Rust process
 
@@ -46,7 +48,10 @@ npm run tauri build
 
 1. Tauri opens a transparent borderless window covering the monitor **work area** (below the macOS menu bar).
 2. The window calls `setIgnoreCursorEvents(true)` and `setFocusable(false)`, so it never intercepts clicks or keyboard/IME input.
-3. A Rust `CGEventTap` streams mouse move/down/up events to the webview.
+3. The window is converted into an `NSPanel` (`FullScreenAuxiliary` + `CanJoinAllSpaces`), letting it float above fullscreen apps and follow every desktop space.
+4. A Rust `CGEventTap` streams mouse move/down/up events to the webview.
+5. The main thread transfers the canvas to an `OffscreenCanvas` and forwards pointer events to a Worker.
+6. The Worker runs `BAClickFX` (`inputSource: 'manual'`) and renders with Full WebGL2 (WebGL2 bloom) when available, otherwise falls back to Canvas 2D + software bloom.
 4. The main thread transfers the canvas to an `OffscreenCanvas` and forwards pointer events to a Worker.
 5. The Worker runs `BAClickFX` (`inputSource: 'manual'`) and renders with Full WebGL2 (WebGL2 bloom) when available, otherwise falls back to Canvas 2D + software bloom.
 

@@ -7,7 +7,8 @@ use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::{generate_handler, AppHandle, Emitter};
+use tauri::{generate_handler, AppHandle, Emitter, Manager, WebviewWindow};
+use tauri_nspanel::{cocoa::appkit::NSWindowCollectionBehavior, WebviewWindowExt};
 
 #[derive(Clone, Serialize)]
 struct MouseEventPayload {
@@ -141,11 +142,39 @@ fn log_message(message: String) {
     println!("[webview] {message}");
 }
 
+#[allow(non_upper_case_globals)]
+fn init_panel(app_handle: &AppHandle) {
+    let window: WebviewWindow = app_handle
+        .get_webview_window("main")
+        .expect("main window not found");
+    let panel = window.to_panel().expect("failed to convert window to panel");
+
+    // Float above other windows, but never become the key/active window.
+    const NSFloatWindowLevel: i32 = 4;
+    panel.set_level(NSFloatWindowLevel);
+
+    const NSWindowStyleMaskNonActivatingPanel: i32 = 1 << 7;
+    panel.set_style_mask(NSWindowStyleMaskNonActivatingPanel);
+
+    // Show in the same Space as fullscreen apps and follow the user across
+    // every desktop space.
+    panel.set_collection_behaviour(
+        NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces,
+    );
+
+    println!("[info] overlay converted to NSWindowCollectionBehaviorFullScreenAuxiliary panel");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_nspanel::init())
         .invoke_handler(generate_handler![log_message])
         .setup(|app| {
+            // Hide the Dock icon: this is a pure overlay utility.
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            init_panel(app.handle());
             start_global_listener(app.handle().clone());
             Ok(())
         })
