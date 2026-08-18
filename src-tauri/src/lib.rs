@@ -50,7 +50,7 @@ fn start_global_listener(app: AppHandle) {
                         *last_position.lock().unwrap() = (point.x, point.y);
 
                         let mut last_move_at = last_move_at.lock().unwrap();
-                        if last_move_at.elapsed() >= Duration::from_millis(33) {
+                        if last_move_at.elapsed() >= Duration::from_millis(16) {
                             *last_move_at = Instant::now();
                             payload = Some(MouseEventPayload {
                                 kind: "move".to_string(),

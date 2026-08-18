@@ -10,6 +10,8 @@ import { listen } from '@tauri-apps/api/event';
 const win = getCurrentWindow();
 const canvas = document.getElementById('fx');
 
+const webgpuAvailable = typeof navigator !== 'undefined' && 'gpu' in navigator;
+
 const state = {
   monitor: null,
   origin: { x: 0, y: 0 },
@@ -57,23 +59,29 @@ async function setupWindow() {
 }
 
 function createFx() {
-  // Use the exact web effect library with manual input from the global mouse
-  // listener. This is the "performance" profile: Canvas 2D + native shadow
-  // glow is the lightest path that still keeps the visual effect.
-  // Full-screen transparent WKWebView cannot keep up with WebGL2/software bloom
-  // on every Mac, so we trade a little glow for smoothness.
+  // Prefer WebGPU when the system WebView exposes it (macOS Tahoe+ Safari/WKWebView).
+  // It is the GPU-backed path that should be both smooth and keep the full effect.
+  // When it is not available, fall back to the lightest Canvas 2D + native glow
+  // profile so the overlay stays usable.
+  const effectBackend = webgpuAvailable ? 'webgpu' : 'canvas2d';
+  const bloomBackend = webgpuAvailable ? 'webgl2' : 'native';
+  const inputSamplingRate = webgpuAvailable ? 60 : 30;
+
+  console.log(`[ba-click-tauri] WebGPU ${webgpuAvailable ? 'available' : 'not available'}; backend=${effectBackend}, bloom=${bloomBackend}`);
+
   state.fx = new BAClickFX({
     target: canvas,
     inputSource: 'manual',
     outputCompositing: 'browser-overlay',
     hostCompositingSurface: 'transparent-window',
-    effectBackend: 'canvas2d',
+    effectBackend,
+    webgpuPreferHdr: false,
     renderingMode: 'enhanced',
-    bloomBackend: 'native',
+    bloomBackend,
     clickEnabled: true,
     trailEnabled: true,
     trailAlways: true,
-    inputSamplingRate: 30,
+    inputSamplingRate,
     maxDpr: 1,
   });
 }
