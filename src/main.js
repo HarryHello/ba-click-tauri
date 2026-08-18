@@ -1,4 +1,3 @@
-import { BAClickFX } from 'ba-click-fx';
 import {
   currentMonitor,
   getCurrentWindow,
@@ -7,6 +6,7 @@ import {
 } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { BAClickFX } from 'ba-click-fx';
 
 const win = getCurrentWindow();
 const canvas = document.getElementById('fx');
@@ -17,6 +17,7 @@ const state = {
   monitor: null,
   origin: { x: 0, y: 0 },
   scale: 1,
+  worker: null,
   fx: null,
 };
 
@@ -33,6 +34,20 @@ function toCanvasPoint(point) {
     x: point.x - state.origin.x / state.scale,
     y: point.y - state.origin.y / state.scale,
   };
+}
+
+function getViewport() {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    width: rect.width,
+    height: rect.height,
+    dpr: Math.min(window.devicePixelRatio || 1, 1),
+  };
+}
+
+function post(type, payload = {}) {
+  state.worker?.postMessage({ type, payload });
 }
 
 async function setupWindow() {
@@ -60,8 +75,9 @@ async function setupWindow() {
 }
 
 async function logStatus(label, extra = {}) {
+  const cfg = state.fx?.getConfig();
+
   try {
-    const cfg = state.fx?.getConfig();
     await invoke('log_message', {
       message: JSON.stringify({
         label,
@@ -81,55 +97,86 @@ async function logStatus(label, extra = {}) {
   }
 }
 
-function createFx() {
-  // The log shows WebGPU is exposed by WKWebView but the library cannot
-  // actually create a usable WebGPU/WebGL2 device on the transparent canvas,
-  // so it resolves to canvas2d + native. Native shadow glow is too subtle,
-  // so we explicitly use software bloom: it costs more, but at 1x/30Hz it
-  // should keep the improved frame rate and restore the real glow.
-  const effectBackend = 'canvas2d';
-  const bloomBackend = 'software';
-  const inputSamplingRate = 30;
+function createWorkerRenderer() {
+  if (typeof canvas.transferControlToOffscreen !== 'function') {
+    return false;
+  }
 
+  try {
+    const offscreen = canvas.transferControlToOffscreen();
+
+    state.worker = new Worker(new URL('./fx-worker.js', import.meta.url), {
+      type: 'module',
+    });
+
+    state.worker.addEventListener('message', (event) => {
+      if (event.data.type === 'status') {
+        invoke('log_message', {
+          message: JSON.stringify(event.data.payload),
+        }).catch(() => {});
+      } else if (event.data.type === 'destroyed') {
+        state.worker = null;
+      }
+    });
+
+    const viewport = getViewport();
+    state.worker.postMessage(
+      {
+        type: 'init',
+        payload: {
+          canvas: offscreen,
+          ...viewport,
+        },
+      },
+      [offscreen],
+    );
+
+    return true;
+  } catch (error) {
+    console.error('Failed to start OffscreenCanvas worker; falling back', error);
+    state.worker = null;
+    return false;
+  }
+}
+
+function createFallbackFx() {
   state.fx = new BAClickFX({
     target: canvas,
     inputSource: 'manual',
     outputCompositing: 'browser-overlay',
     hostCompositingSurface: 'transparent-window',
-    effectBackend,
-    webgpuPreferHdr: false,
+    effectBackend: 'canvas2d',
     renderingMode: 'enhanced',
-    bloomBackend,
+    bloomBackend: 'software',
     clickEnabled: true,
     trailEnabled: true,
     trailAlways: true,
-    inputSamplingRate,
+    inputSamplingRate: 30,
     maxDpr: 1,
   });
 
-  // Software bloom is the main cost. Lowering resolutionScale and diffusion
-  // keeps the glow visible while cutting the full-screen blur work a lot.
   state.fx.setFxParam('bloom.resolutionScale', 0.3);
   state.fx.setFxParam('bloom.diffusion', 5);
-  // Clicks are too bright compared to the trail; scale down only the click
-  // bloom source without changing the trail's glow.
   state.fx.setFxParam('bloom.clickEmissionScale', 0.5);
 
-  logStatus('startup', {
-    requested: { effectBackend, bloomBackend, inputSamplingRate },
+  logStatus('fallback', {
+    requested: {
+      effectBackend: 'canvas2d',
+      bloomBackend: 'software',
+      inputSamplingRate: 30,
+    },
   }).catch(() => {});
+}
 
-  canvas.addEventListener('baclickfxeffectbackendchange', (event) => {
-    logStatus('effect-backend', event.detail).catch(() => {});
-  });
-  canvas.addEventListener('baclickfxbackendchange', (event) => {
-    logStatus('bloom-backend', event.detail).catch(() => {});
-  });
+function createRenderer() {
+  if (createWorkerRenderer()) {
+    return;
+  }
+
+  createFallbackFx();
 }
 
 function onMouseEvent(event) {
-  if (!state.fx) return;
-
   const point = toCanvasPoint({ x: event.x, y: event.y });
   const input = {
     x: point.x,
@@ -137,6 +184,19 @@ function onMouseEvent(event) {
     pointerId: 1,
     pointerType: 'mouse',
   };
+
+  if (state.worker) {
+    if (event.kind === 'move') {
+      post('pointerMove', input);
+    } else if (event.kind === 'down') {
+      post('pointerDown', input);
+    } else if (event.kind === 'up') {
+      post('pointerUp', { pointerId: 1 });
+    }
+    return;
+  }
+
+  if (!state.fx) return;
 
   if (event.kind === 'move') {
     state.fx.pointerMove(input);
@@ -149,7 +209,7 @@ function onMouseEvent(event) {
 
 async function main() {
   await setupWindow();
-  createFx();
+  createRenderer();
 
   await listen('mouse-event', (event) => {
     onMouseEvent(event.payload);
