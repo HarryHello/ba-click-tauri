@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{generate_handler, AppHandle, Emitter, Manager, WebviewWindow};
+#[allow(deprecated)] // tauri-nspanel v2 re-exports the old cocoa wrappers
 use tauri_nspanel::{cocoa::appkit::NSWindowCollectionBehavior, WebviewWindowExt};
 
 #[derive(Clone, Serialize)]
@@ -143,6 +144,7 @@ fn log_message(message: String) {
 }
 
 #[allow(non_upper_case_globals)]
+#[allow(deprecated)] // the cocoa re-export is deprecated but tauri-nspanel v2 still uses it
 fn init_panel(app_handle: &AppHandle) {
     let window: WebviewWindow = app_handle
         .get_webview_window("main")
