@@ -46,8 +46,8 @@ function sendOpacity() {
   send({
     type: 'setFxParams',
     payload: {
-      'bloom.diskEmission': +(0.7 * value).toFixed(3),
-      'bloom.diskEmissionAlpha': +(0.5 * value).toFixed(3),
+      'bloom.diskEmission': +(1.0 * value).toFixed(3),
+      'bloom.diskEmissionAlpha': +(0.6 * value).toFixed(3),
       'shards.hdrIntensity': +(5.99 * value).toFixed(3),
     },
   });

@@ -115,8 +115,8 @@ npm run tauri build
 | `bloom.resolutionScale` | 0.3 | Cheaper bloom buffers (performance) / 降低 Bloom 缓冲开销（性能） |
 | `bloom.diffusion` | 5 | Less blur work (performance) / 减少模糊计算（性能） |
 | `bloom.clickEmissionScale` | 0.4 | Click glow not too bright / 点击辉光不过亮 |
-| `bloom.diskEmission` | 0.7 | Soft, semi-transparent light-blue centre disk / 柔和半透明浅蓝中心圆盘 |
-| `bloom.diskEmissionAlpha` | 0.5 | Disk stays translucent, not a white blob / 圆盘保持半透明，不是白块 |
+| `bloom.diskEmission` | 1.0 | Soft, semi-transparent pale-blue centre disk / 柔和半透明淡蓝中心圆盘 |
+| `bloom.diskEmissionAlpha` | 0.6 | Disk stays translucent, not a white blob / 圆盘保持半透明，不是白块 |
 | `trail.width` / `trail.geometryWidth` | 4.0 | Thicker trail core / 拖尾核心更粗 |
 | `trail.outerGlowWidth` | 16 | Water-drop head glow / 水滴状头部辉光 |
 | `bloom.trailEmission` | 30 | Brighter head → clear thick-to-thin taper / 头部更亮，粗细渐变更明显 |

@@ -23,8 +23,8 @@ export function applyFxPatches(fx) {
 
   // Click: soft, semi-transparent light-blue centre disk instead of a white blob.
   fx.setFxParam('bloom.clickEmissionScale', 0.4);
-  fx.setFxParam('bloom.diskEmission', 0.7);
-  fx.setFxParam('bloom.diskEmissionAlpha', 0.5);
+  fx.setFxParam('bloom.diskEmission', 1.0);
+  fx.setFxParam('bloom.diskEmissionAlpha', 0.6);
 
   // Trail: water-drop shape — thicker, brighter head that tapers behind.
   fx.setFxParam('trail.width', 4.0);
