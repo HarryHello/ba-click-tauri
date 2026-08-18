@@ -58,21 +58,22 @@ async function setupWindow() {
 
 function createFx() {
   // Use the exact web effect library with manual input from the global mouse
-  // listener. Force enhanced rendering + WebGL2 bloom; if WKWebView cannot
-  // create a WebGL2 context, the library falls back to software bloom so the
-  // glow is still preserved instead of a weak native shadow path.
+  // listener. This is the "performance" profile: Canvas 2D + native shadow
+  // glow is the lightest path that still keeps the visual effect.
+  // Full-screen transparent WKWebView cannot keep up with WebGL2/software bloom
+  // on every Mac, so we trade a little glow for smoothness.
   state.fx = new BAClickFX({
     target: canvas,
     inputSource: 'manual',
     outputCompositing: 'browser-overlay',
     hostCompositingSurface: 'transparent-window',
-    effectBackend: 'webgl2',
+    effectBackend: 'canvas2d',
     renderingMode: 'enhanced',
-    bloomBackend: 'software',
+    bloomBackend: 'native',
     clickEnabled: true,
     trailEnabled: true,
     trailAlways: true,
-    inputSamplingRate: 60,
+    inputSamplingRate: 30,
     maxDpr: 1,
   });
 }
