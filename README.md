@@ -21,6 +21,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - Converted to an **NSPanel** with `FullScreenAuxiliary` + `CanJoinAllSpaces`, so it can float above **fullscreen apps**
 - App runs as an `Accessory` (no Dock icon) since it is a pure overlay utility
 - Uses the original `ba-click-fx` npm package — no effect rewrite
+- Built-in management panel: unified effect size, opacity (disk + shards only), trail width, bloom, refresh rate and quality presets
 - Lightweight: system WKWebView + small Rust process
 
 **中文**
@@ -33,6 +34,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - 使用 **NSPanel**（`FullScreenAuxiliary` + `CanJoinAllSpaces`），可覆盖在**全屏应用**之上
 - 以 `Accessory` 模式运行（无 Dock 图标），是纯悬浮工具
 - 直接使用原版 `ba-click-fx` npm 包，不重写特效
+- 内置管理面板：统一特效大小、不透明度（仅圆盘 + 碎片）、拖尾粗细、辉光、刷新率与画质预设
 - 轻量：系统 WKWebView + 小体积 Rust 进程
 
 ---
@@ -203,19 +205,23 @@ Then rebuild with `npm run tauri dev` / `npm run tauri build`.
 ```text
 ba-click-tauri/
 ├── index.html           # transparent overlay page / 透明悬浮页面
+├── panel.html           # management panel page / 管理面板页面
 ├── src/
-│   ├── main.js          # window setup, global mouse wiring, worker forwarding
-│   │                    # 窗口设置、全局鼠标接线、Worker 转发
+│   ├── main.js          # window setup, global mouse wiring, worker + panel command forwarding
+│   │                    # 窗口设置、全局鼠标接线、Worker + 面板指令转发
 │   ├── fx-config.js     # shared BAClickFX options + tuning (single source of truth)
 │   │                    # 共享 BAClickFX 配置 + 调参（唯一入口）
-│   └── fx-worker.js     # BAClickFX inside a Worker (WebGL2 OffscreenCanvas)
-│                        # Worker 内运行的 BAClickFX（WebGL2 OffscreenCanvas）
+│   ├── fx-worker.js     # BAClickFX inside a Worker (WebGL2 OffscreenCanvas)
+│   │                    # Worker 内运行的 BAClickFX（WebGL2 OffscreenCanvas）
+│   ├── panel.js         # management panel logic -> emits panel-command events
+│   │                    # 管理面板逻辑 -> 发送 panel-command 事件
+│   └── panel.css        # management panel styles / 管理面板样式
 ├── src-tauri/
 │   ├── src/
 │   │   └── lib.rs       # Rust backend + mouse-only CGEventTap + NSPanel + log bridge
 │   │                    # Rust 后端 + 仅鼠标 CGEventTap + NSPanel + 日志桥
 │   ├── capabilities/
-│   └── tauri.conf.json  # transparent overlay window config / 透明悬浮窗口配置
+│   └── tauri.conf.json  # overlay + management window config / 悬浮层 + 管理窗口配置
 ```
 
 ---

@@ -11,5 +11,11 @@ export default defineConfig({
     target: 'es2021',
     minify: false,
     sourcemap: false,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        panel: 'panel.html',
+      },
+    },
   },
 });

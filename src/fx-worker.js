@@ -72,6 +72,29 @@ self.addEventListener('message', (event) => {
       fx?.resize(payload.width, payload.height, payload.dpr);
       break;
 
+    case 'updateConfig':
+      fx?.updateConfig(payload);
+      break;
+
+    case 'setFxParams':
+      fx?.setFxParams(payload);
+      break;
+
+    case 'reset':
+      fx?.updateConfig({
+        clickEnabled: true,
+        trailEnabled: true,
+        trailAlways: true,
+        scale: 1,
+        opacity: 1,
+        clickTimeScale: 1,
+        inputSamplingRate: 60,
+        maxDpr: 1,
+      });
+      fx?.resetFxConfig();
+      applyFxPatches(fx);
+      break;
+
     case 'pointerDown':
       fx?.pointerDown(payload);
       break;

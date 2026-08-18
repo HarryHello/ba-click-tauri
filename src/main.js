@@ -200,12 +200,45 @@ function onMouseEvent(event) {
   }
 }
 
+function handlePanelCommand(command) {
+  const { type, payload } = command;
+
+  if (state.worker) {
+    post(type, payload);
+    return;
+  }
+
+  if (!state.fx) return;
+
+  if (type === 'updateConfig') {
+    state.fx.updateConfig(payload);
+  } else if (type === 'setFxParams') {
+    state.fx.setFxParams(payload);
+  } else if (type === 'reset') {
+    state.fx.updateConfig({
+      clickEnabled: true,
+      trailEnabled: true,
+      trailAlways: true,
+      scale: 1,
+      opacity: 1,
+      clickTimeScale: 1,
+      inputSamplingRate: 60,
+      maxDpr: 1,
+    });
+    state.fx.resetFxConfig();
+    applyFxPatches(state.fx);
+  }
+}
+
 async function main() {
   await setupWindow();
   createRenderer();
 
   await listen('mouse-event', (event) => {
     onMouseEvent(event.payload);
+  });
+  await listen('panel-command', (event) => {
+    handlePanelCommand(event.payload);
   });
 }
 

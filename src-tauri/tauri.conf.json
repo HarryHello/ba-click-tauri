@@ -26,6 +26,17 @@
         "resizable": false,
         "shadow": false,
         "visible": true
+      },
+      {
+        "label": "panel",
+        "title": "BA Click FX · 管理",
+        "url": "panel.html",
+        "width": 360,
+        "height": 560,
+        "decorations": true,
+        "alwaysOnTop": true,
+        "resizable": false,
+        "visible": true
       }
     ],
     "security": {

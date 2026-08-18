@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BA Click FX · 管理</title>
+    <link rel="stylesheet" href="/src/panel.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <h1>BA Click FX</h1>
+
+      <section class="group">
+        <label class="switch">
+          <input id="enabled" type="checkbox" checked />
+          <span>启用特效（点击 + 拖尾）</span>
+        </label>
+      </section>
+
+      <section class="group">
+        <label class="field">
+          <span class="row">
+            <span>特效大小</span>
+            <output id="scale-value">1.00×</output>
+          </span>
+          <input id="scale" type="range" min="0.5" max="2" step="0.05" value="1" />
+          <small>统一缩放圆盘、圆环、碎片与拖尾</small>
+        </label>
+
+        <label class="field">
+          <span class="row">
+            <span>不透明度（仅圆盘 + 碎片）</span>
+            <output id="opacity-value">100%</output>
+          </span>
+          <input id="opacity" type="range" min="0" max="1" step="0.01" value="1" />
+          <small>拖尾和圆环保持不透明</small>
+        </label>
+      </section>
+
+      <section class="group">
+        <label class="field">
+          <span class="row">
+            <span>点击时间倍率</span>
+            <output id="click-time-value">1.00×</output>
+          </span>
+          <input id="click-time" type="range" min="0.5" max="2" step="0.05" value="1" />
+        </label>
+      </section>
+
+      <section class="group">
+        <label class="switch">
+          <input id="trail-always" type="checkbox" checked />
+          <span>拖尾常驻（移动即显示）</span>
+        </label>
+
+        <label class="field">
+          <span class="row">
+            <span>拖尾粗细</span>
+            <output id="trail-width-value">4.0</output>
+          </span>
+          <input id="trail-width" type="range" min="1" max="10" step="0.1" value="4" />
+        </label>
+      </section>
+
+      <section class="group">
+        <label class="field">
+          <span class="row">
+            <span>辉光强度</span>
+            <output id="bloom-value">1.70</output>
+          </span>
+          <input id="bloom" type="range" min="0" max="3" step="0.1" value="1.7" />
+        </label>
+
+        <label class="field">
+          <span class="row">
+            <span>刷新率</span>
+            <span class="select-wrap">
+              <select id="refresh-rate">
+                <option value="30">30 Hz</option>
+                <option value="60" selected>60 Hz</option>
+                <option value="120">120 Hz</option>
+              </select>
+            </span>
+          </span>
+        </label>
+
+        <label class="field">
+          <span class="row">
+            <span>画质预设</span>
+            <span class="select-wrap">
+              <select id="quality">
+                <option value="low">流畅</option>
+                <option value="balanced" selected>均衡</option>
+                <option value="high">精细</option>
+              </select>
+            </span>
+          </span>
+        </label>
+      </section>
+
+      <button id="reset" class="secondary" type="button">恢复默认设置</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="/src/panel.js"></script>
+  </body>
+</html>
