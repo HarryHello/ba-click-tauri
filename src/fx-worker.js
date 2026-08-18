@@ -37,7 +37,7 @@ self.addEventListener('message', (event) => {
         clickEnabled: true,
         trailEnabled: true,
         trailAlways: true,
-        inputSamplingRate: 30,
+        inputSamplingRate: 60,
         maxDpr: 1,
         overlayAlphaLimit: 0.85,
       });
@@ -63,7 +63,7 @@ self.addEventListener('message', (event) => {
         requested: {
           effectBackend: 'canvas2d',
           bloomBackend: 'software',
-          inputSamplingRate: 30,
+          inputSamplingRate: 60,
         },
       });
       break;
