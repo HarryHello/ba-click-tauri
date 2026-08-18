@@ -66,12 +66,13 @@ async function setupWindow() {
   }
 
   await win.setAlwaysOnTop(true);
-  await win.setVisibleOnAllWorkspaces(true);
   await win.setIgnoreCursorEvents(true);
 
-  // The overlay must never take keyboard/IME focus. If it does, typing in
-  // another app (even English) can crash or misbehave.
-  await win.setFocusable(false);
+  // Note: the window is an NSPanel with the NonActivatingPanel style mask, so
+  // it never takes keyboard/IME focus. Do NOT call setFocusable(false) here:
+  // it panics on NSPanel-backed Tauri windows (no `focusable` ivar on NSPanel).
+  // Spaces behaviour is set natively in Rust (FullScreenAuxiliary +
+  // CanJoinAllSpaces), so setVisibleOnAllWorkspaces is unnecessary too.
 }
 
 async function logStatus(label, extra = {}) {

@@ -10,7 +10,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - Mouse-only macOS `CGEventTap` for global move/down/up events — keyboard/IME is never touched
 - Effect renders in a **Dedicated Worker + OffscreenCanvas** with **Full WebGL2**
 - Falls back to `canvas2d + software bloom` when WebGL2 is unavailable
-- Window is non-focusable (`focusable: false`), so typing in other apps never steals focus
+- NSPanel is `NonActivatingPanel`, so it never takes keyboard/IME focus
 - Converted to an **NSPanel** with `FullScreenAuxiliary` + `CanJoinAllSpaces`, so it can float above **fullscreen apps**
 - App runs as an `Accessory` (no Dock icon) since it is a pure overlay utility
 - Uses the original `ba-click-fx` npm package — no effect rewrite
@@ -47,13 +47,11 @@ npm run tauri build
 ## How it works
 
 1. Tauri opens a transparent borderless window covering the monitor **work area** (below the macOS menu bar).
-2. The window calls `setIgnoreCursorEvents(true)` and `setFocusable(false)`, so it never intercepts clicks or keyboard/IME input.
-3. The window is converted into an `NSPanel` (`FullScreenAuxiliary` + `CanJoinAllSpaces`), letting it float above fullscreen apps and follow every desktop space.
+2. The window calls `setIgnoreCursorEvents(true)` so clicks pass through.
+3. The window is converted into a non-activating `NSPanel` (`FullScreenAuxiliary` + `CanJoinAllSpaces`), so it floats above fullscreen apps, follows every space, and never takes keyboard/IME focus.
 4. A Rust `CGEventTap` streams mouse move/down/up events to the webview.
 5. The main thread transfers the canvas to an `OffscreenCanvas` and forwards pointer events to a Worker.
 6. The Worker runs `BAClickFX` (`inputSource: 'manual'`) and renders with Full WebGL2 (WebGL2 bloom) when available, otherwise falls back to Canvas 2D + software bloom.
-4. The main thread transfers the canvas to an `OffscreenCanvas` and forwards pointer events to a Worker.
-5. The Worker runs `BAClickFX` (`inputSource: 'manual'`) and renders with Full WebGL2 (WebGL2 bloom) when available, otherwise falls back to Canvas 2D + software bloom.
 
 ## Current tuning
 
