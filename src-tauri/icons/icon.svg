@@ -5,27 +5,32 @@
   <!-- Concentric arcs, center (512,512) -->
   <!-- Top-right arc: larger radius, darker blue, square caps -->
   <path
-    d="M 851.8 452.1 A 345 345 0 0 1 571.9 851.8"
+    d="M 601.3 178.7 A 345 345 0 0 1 845.2 422.7"
     fill="none"
     stroke="#2563EB"
     stroke-width="58"
     stroke-linecap="square"
   />
-  <!-- Bottom-left arc: smaller radius, lighter blue, square caps -->
+  <!-- Bottom-left arc: smaller radius (slightly larger), lighter blue, square caps -->
   <path
-    d="M 310.0 438.5 A 215 215 0 0 1 474.7 300.3"
+    d="M 412.7 725.0 A 235 235 0 0 1 280.6 552.8"
     fill="none"
     stroke="#60A5FA"
     stroke-width="50"
     stroke-linecap="square"
   />
 
-  <!-- Random triangles with varied blue shades -->
-  <polygon points="200,180 160,260 250,250" fill="#3B82F6"/>
-  <polygon points="760,220 900,240 840,330" fill="#60A5FA"/>
-  <polygon points="800,760 930,740 850,860" fill="#1D4ED8"/>
-  <polygon points="150,720 250,740 200,840" fill="#7DD3FC"/>
-  <polygon points="760,520 700,590 820,610" fill="#2563EB"/>
+  <!-- Equilateral triangles: upright (point up) or inverted (point down) only -->
+  <!-- Upright -->
+  <polygon points="230,145 175,288 285,288" fill="#3B82F6"/>
+  <!-- Inverted -->
+  <polygon points="780,367 730,237 830,237" fill="#60A5FA"/>
+  <!-- Upright -->
+  <polygon points="230,656 170,812 290,812" fill="#7DD3FC"/>
+  <!-- Inverted -->
+  <polygon points="790,875 735,732 845,732" fill="#1D4ED8"/>
+  <!-- Upright -->
+  <polygon points="480,102 435,219 525,219" fill="#2563EB"/>
 
   <!-- Center dot -->
   <circle cx="512" cy="512" r="34" fill="#1E40AF"/>
