@@ -35,8 +35,8 @@ body {
   background: rgba(24, 24, 24, 0.3);
   border-radius: 14px;
   border: 1px solid transparent;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
 }
 
 h1 {

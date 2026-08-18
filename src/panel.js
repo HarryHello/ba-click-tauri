@@ -106,14 +106,13 @@ function sendQuality() {
   });
 }
 
-async function sendBlurRadius() {
-  const radius = Number($('blur-radius').value);
-  $('blur-value').textContent = String(radius);
+async function sendVibrancyMaterial() {
+  const material = $('vibrancy-material').value;
   try {
-    await invoke('set_panel_vibrancy', { radius });
+    await invoke('set_panel_material', { material });
     showStatus('毛玻璃已更新');
   } catch (error) {
-    console.error('Failed to set panel vibrancy', error);
+    console.error('Failed to set panel material', error);
     showStatus('毛玻璃更新失败');
   }
 }
@@ -128,8 +127,7 @@ function resetDefaults() {
   $('bloom').value = '1.7';
   $('refresh-rate').value = '60';
   $('quality').value = 'balanced';
-  $('blur-radius').value = '18';
-  $('blur-value').textContent = '18';
+  $('vibrancy-material').value = 'hud';
 
   $('scale-value').textContent = '1.00×';
   $('opacity-value').textContent = '100%';
@@ -138,8 +136,8 @@ function resetDefaults() {
   $('bloom-value').textContent = '1.70';
 
   emit('panel-command', { type: 'reset' });
-  invoke('set_panel_vibrancy', { radius: 18 }).catch((error) => {
-    console.error('Failed to reset panel vibrancy', error);
+  invoke('set_panel_material', { material: 'hud' }).catch((error) => {
+    console.error('Failed to reset panel material', error);
   });
   showStatus('已恢复默认');
 }
@@ -153,5 +151,5 @@ $('trail-width').addEventListener('input', sendTrailWidth);
 $('bloom').addEventListener('input', sendBloom);
 $('refresh-rate').addEventListener('change', sendRefreshRate);
 $('quality').addEventListener('change', sendQuality);
-$('blur-radius').addEventListener('input', sendBlurRadius);
+$('vibrancy-material').addEventListener('change', sendVibrancyMaterial);
 $('reset').addEventListener('click', resetDefaults);

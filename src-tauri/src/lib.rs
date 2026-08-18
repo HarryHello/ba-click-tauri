@@ -171,6 +171,15 @@ fn init_panel(app_handle: &AppHandle) {
     println!("[info] overlay converted to NSWindowCollectionBehaviorFullScreenAuxiliary panel");
 }
 
+fn parse_vibrancy_material(value: &str) -> NSVisualEffectMaterial {
+    match value {
+        "sidebar" => NSVisualEffectMaterial::Sidebar,
+        "window" => NSVisualEffectMaterial::WindowBackground,
+        "content" => NSVisualEffectMaterial::ContentBackground,
+        _ => NSVisualEffectMaterial::HudWindow,
+    }
+}
+
 fn apply_panel_vibrancy(app_handle: &AppHandle) {
     let panel = app_handle
         .get_webview_window("panel")
@@ -180,7 +189,7 @@ fn apply_panel_vibrancy(app_handle: &AppHandle) {
         &panel,
         NSVisualEffectMaterial::HudWindow,
         Some(NSVisualEffectState::Active),
-        Some(18.0),
+        None,
     ) {
         Ok(()) => println!("[info] applied native vibrancy to management panel"),
         Err(error) => eprintln!("[info] failed to apply vibrancy to management panel: {error}"),
@@ -188,18 +197,17 @@ fn apply_panel_vibrancy(app_handle: &AppHandle) {
 }
 
 #[tauri::command]
-fn set_panel_vibrancy(app: AppHandle, radius: f64) -> Result<(), String> {
+fn set_panel_material(app: AppHandle, material: String) -> Result<(), String> {
     let panel = app
         .get_webview_window("panel")
         .ok_or_else(|| "panel window not found".to_string())?;
-    let radius = radius.clamp(0.0, 40.0);
 
     clear_vibrancy(&panel).map_err(|error| error.to_string())?;
     apply_vibrancy(
         &panel,
-        NSVisualEffectMaterial::HudWindow,
+        parse_vibrancy_material(&material),
         Some(NSVisualEffectState::Active),
-        Some(radius),
+        None,
     )
     .map_err(|error| error.to_string())
 }
@@ -208,7 +216,7 @@ fn set_panel_vibrancy(app: AppHandle, radius: f64) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
-        .invoke_handler(generate_handler![log_message, set_panel_vibrancy])
+        .invoke_handler(generate_handler![log_message, set_panel_material])
         .setup(|app| {
             // Hide the Dock icon: this is a pure overlay utility.
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);

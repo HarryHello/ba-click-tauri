@@ -99,11 +99,17 @@
 
         <label class="field">
           <span class="row">
-            <span>毛玻璃强度</span>
-            <output id="blur-value">18</output>
+            <span>毛玻璃样式</span>
+            <span class="select-wrap">
+              <select id="vibrancy-material">
+                <option value="hud" selected>浮层 HUD</option>
+                <option value="sidebar">侧边栏</option>
+                <option value="window">窗口背景</option>
+                <option value="content">内容背景</option>
+              </select>
+            </span>
           </span>
-          <input id="blur-radius" type="range" min="0" max="40" step="1" value="18" />
-          <small>原生 vibrancy 模糊半径（CSS 无效，需走 Rust）</small>
+          <small>macOS 原生 vibrancy 材质（无连续模糊强度 API）</small>
         </label>
       </section>
 
