@@ -22,9 +22,12 @@ export function applyFxPatches(fx) {
   fx.setFxParam('bloom.diffusion', 5);
 
   // Click: soft, semi-transparent light-blue centre disk instead of a white blob.
+  // Default opacity is 35% and only affects the disk + shards.
+  const DEFAULT_OPACITY = 0.35;
   fx.setFxParam('bloom.clickEmissionScale', 0.4);
-  fx.setFxParam('bloom.diskEmission', 1.0);
-  fx.setFxParam('bloom.diskEmissionAlpha', 0.6);
+  fx.setFxParam('bloom.diskEmission', +(1.0 * DEFAULT_OPACITY).toFixed(3));
+  fx.setFxParam('bloom.diskEmissionAlpha', +(0.6 * DEFAULT_OPACITY).toFixed(3));
+  fx.setFxParam('shards.hdrIntensity', +(5.99 * DEFAULT_OPACITY).toFixed(3));
 
   // Trail: water-drop shape — thicker, brighter head that tapers behind.
   fx.setFxParam('trail.width', 4.0);

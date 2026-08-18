@@ -120,7 +120,7 @@ async function sendVibrancyMaterial() {
 function resetDefaults() {
   $('enabled').checked = true;
   $('scale').value = '1';
-  $('opacity').value = '1';
+  $('opacity').value = '0.35';
   $('click-time').value = '1';
   $('trail-always').checked = true;
   $('trail-width').value = '4';
@@ -130,7 +130,7 @@ function resetDefaults() {
   $('vibrancy-material').value = 'hud';
 
   $('scale-value').textContent = '1.00×';
-  $('opacity-value').textContent = '100%';
+  $('opacity-value').textContent = '35%';
   $('click-time-value').textContent = '1.00×';
   $('trail-width-value').textContent = '4.0';
   $('bloom-value').textContent = '1.70';
