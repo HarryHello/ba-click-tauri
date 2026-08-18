@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter};
+use tauri::{generate_handler, AppHandle, Emitter};
 
 #[derive(Clone, Serialize)]
 struct MouseEventPayload {
@@ -136,9 +136,15 @@ fn start_global_listener(app: AppHandle) {
     });
 }
 
+#[tauri::command]
+fn log_message(message: String) {
+    println!("[webview] {message}");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .invoke_handler(generate_handler![log_message])
         .setup(|app| {
             start_global_listener(app.handle().clone());
             Ok(())

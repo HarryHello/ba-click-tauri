@@ -6,6 +6,7 @@ import {
   PhysicalSize,
 } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 
 const win = getCurrentWindow();
 const canvas = document.getElementById('fx');
@@ -58,6 +59,28 @@ async function setupWindow() {
   await win.setFocusable(false);
 }
 
+async function logStatus(label, extra = {}) {
+  try {
+    const cfg = state.fx?.getConfig();
+    await invoke('log_message', {
+      message: JSON.stringify({
+        label,
+        webgpuAvailable,
+        extra,
+        resolved: cfg
+          ? {
+              effect: cfg.resolvedEffectBackend,
+              bloom: cfg.resolvedBloomBackend,
+              mode: cfg.renderingMode,
+            }
+          : null,
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to log status', error);
+  }
+}
+
 function createFx() {
   // Prefer WebGPU when the system WebView exposes it (macOS Tahoe+ Safari/WKWebView).
   // It is the GPU-backed path that should be both smooth and keep the full effect.
@@ -66,8 +89,6 @@ function createFx() {
   const effectBackend = webgpuAvailable ? 'webgpu' : 'canvas2d';
   const bloomBackend = webgpuAvailable ? 'webgl2' : 'native';
   const inputSamplingRate = webgpuAvailable ? 60 : 30;
-
-  console.log(`[ba-click-tauri] WebGPU ${webgpuAvailable ? 'available' : 'not available'}; backend=${effectBackend}, bloom=${bloomBackend}`);
 
   state.fx = new BAClickFX({
     target: canvas,
@@ -83,6 +104,17 @@ function createFx() {
     trailAlways: true,
     inputSamplingRate,
     maxDpr: 1,
+  });
+
+  logStatus('startup', {
+    requested: { effectBackend, bloomBackend, inputSamplingRate },
+  }).catch(() => {});
+
+  canvas.addEventListener('baclickfxeffectbackendchange', (event) => {
+    logStatus('effect-backend', event.detail).catch(() => {});
+  });
+  canvas.addEventListener('baclickfxbackendchange', (event) => {
+    logStatus('bloom-backend', event.detail).catch(() => {});
   });
 }
 
