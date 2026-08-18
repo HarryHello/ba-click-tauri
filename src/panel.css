@@ -1,12 +1,12 @@
 :root {
   color-scheme: dark;
-  --bg: #0e1626;
-  --panel: #16233c;
-  --line: #243652;
-  --text: #dbe7ff;
-  --muted: #8aa3c8;
-  --accent: #4ca7ff;
-  --accent-2: #60a5fa;
+  --bg: #1c1c1e;
+  --panel: #2c2c2e;
+  --line: #3a3a3c;
+  --text: #e8e8e8;
+  --muted: #9a9a9c;
+  --accent: #0a84ff;
+  --accent-2: #64a7ff;
 }
 
 * {
@@ -32,11 +32,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: rgba(14, 22, 38, 0.38);
+  background: rgba(24, 24, 24, 0.3);
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid transparent;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 h1 {
@@ -48,7 +48,7 @@ h1 {
 
 .group {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid transparent;
   border-radius: 10px;
   padding: 12px;
   display: flex;
@@ -84,7 +84,7 @@ input[type='range'] {
 }
 
 select {
-  background: #0d1730;
+  background: #282828;
   color: var(--text);
   border: 1px solid var(--line);
   border-radius: 6px;

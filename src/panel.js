@@ -1,4 +1,5 @@
 import { emit } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
@@ -105,6 +106,18 @@ function sendQuality() {
   });
 }
 
+async function sendBlurRadius() {
+  const radius = Number($('blur-radius').value);
+  $('blur-value').textContent = String(radius);
+  try {
+    await invoke('set_panel_vibrancy', { radius });
+    showStatus('毛玻璃已更新');
+  } catch (error) {
+    console.error('Failed to set panel vibrancy', error);
+    showStatus('毛玻璃更新失败');
+  }
+}
+
 function resetDefaults() {
   $('enabled').checked = true;
   $('scale').value = '1';
@@ -115,6 +128,8 @@ function resetDefaults() {
   $('bloom').value = '1.7';
   $('refresh-rate').value = '60';
   $('quality').value = 'balanced';
+  $('blur-radius').value = '18';
+  $('blur-value').textContent = '18';
 
   $('scale-value').textContent = '1.00×';
   $('opacity-value').textContent = '100%';
@@ -123,6 +138,9 @@ function resetDefaults() {
   $('bloom-value').textContent = '1.70';
 
   emit('panel-command', { type: 'reset' });
+  invoke('set_panel_vibrancy', { radius: 18 }).catch((error) => {
+    console.error('Failed to reset panel vibrancy', error);
+  });
   showStatus('已恢复默认');
 }
 
@@ -135,4 +153,5 @@ $('trail-width').addEventListener('input', sendTrailWidth);
 $('bloom').addEventListener('input', sendBloom);
 $('refresh-rate').addEventListener('change', sendRefreshRate);
 $('quality').addEventListener('change', sendQuality);
+$('blur-radius').addEventListener('input', sendBlurRadius);
 $('reset').addEventListener('click', resetDefaults);

@@ -96,6 +96,15 @@
             </span>
           </span>
         </label>
+
+        <label class="field">
+          <span class="row">
+            <span>毛玻璃强度</span>
+            <output id="blur-value">18</output>
+          </span>
+          <input id="blur-radius" type="range" min="0" max="40" step="1" value="18" />
+          <small>原生 vibrancy 模糊半径（CSS 无效，需走 Rust）</small>
+        </label>
       </section>
 
       <button id="reset" class="secondary" type="button">恢复默认设置</button>

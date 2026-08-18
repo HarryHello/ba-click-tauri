@@ -10,7 +10,9 @@ use std::time::{Duration, Instant};
 use tauri::{generate_handler, AppHandle, Emitter, Manager, WebviewWindow};
 #[allow(deprecated)] // tauri-nspanel v2 re-exports the old cocoa wrappers
 use tauri_nspanel::{cocoa::appkit::NSWindowCollectionBehavior, WebviewWindowExt};
-use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial, NSVisualEffectState};
+use window_vibrancy::{
+    apply_vibrancy, clear_vibrancy, NSVisualEffectMaterial, NSVisualEffectState,
+};
 
 #[derive(Clone, Serialize)]
 struct MouseEventPayload {
@@ -178,18 +180,35 @@ fn apply_panel_vibrancy(app_handle: &AppHandle) {
         &panel,
         NSVisualEffectMaterial::HudWindow,
         Some(NSVisualEffectState::Active),
-        Some(12.0),
+        Some(18.0),
     ) {
         Ok(()) => println!("[info] applied native vibrancy to management panel"),
         Err(error) => eprintln!("[info] failed to apply vibrancy to management panel: {error}"),
     }
 }
 
+#[tauri::command]
+fn set_panel_vibrancy(app: AppHandle, radius: f64) -> Result<(), String> {
+    let panel = app
+        .get_webview_window("panel")
+        .ok_or_else(|| "panel window not found".to_string())?;
+    let radius = radius.clamp(0.0, 40.0);
+
+    clear_vibrancy(&panel).map_err(|error| error.to_string())?;
+    apply_vibrancy(
+        &panel,
+        NSVisualEffectMaterial::HudWindow,
+        Some(NSVisualEffectState::Active),
+        Some(radius),
+    )
+    .map_err(|error| error.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
-        .invoke_handler(generate_handler![log_message])
+        .invoke_handler(generate_handler![log_message, set_panel_vibrancy])
         .setup(|app| {
             // Hide the Dock icon: this is a pure overlay utility.
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
