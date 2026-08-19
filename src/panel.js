@@ -1,5 +1,11 @@
 import { emit } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import {
+  DEFAULT_SETTINGS,
+  loadSettings,
+  saveSettings,
+  QUALITY_PRESETS,
+} from './settings.js';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
@@ -15,6 +21,7 @@ function showStatus(message) {
 
 function send(payload) {
   emit('panel-command', payload);
+  persistSettings();
   showStatus('已应用');
 }
 
@@ -24,6 +31,44 @@ function num(id) {
 
 function fmt(value, digits = 2) {
   return Number(value).toFixed(digits);
+}
+
+function collectSettings() {
+  return {
+    enabled: $('enabled').checked,
+    scale: num('scale'),
+    opacity: num('opacity'),
+    clickTime: num('click-time'),
+    trailAlways: $('trail-always').checked,
+    trailWidth: num('trail-width'),
+    bloom: num('bloom'),
+    refreshRate: Number($('refresh-rate').value),
+    quality: $('quality').value,
+    vibrancyMaterial: $('vibrancy-material').value,
+  };
+}
+
+function persistSettings() {
+  saveSettings(collectSettings());
+}
+
+function applyToDom(settings) {
+  $('enabled').checked = settings.enabled;
+  $('scale').value = String(settings.scale);
+  $('opacity').value = String(settings.opacity);
+  $('click-time').value = String(settings.clickTime);
+  $('trail-always').checked = settings.trailAlways;
+  $('trail-width').value = String(settings.trailWidth);
+  $('bloom').value = String(settings.bloom);
+  $('refresh-rate').value = String(settings.refreshRate);
+  $('quality').value = settings.quality;
+  $('vibrancy-material').value = settings.vibrancyMaterial;
+
+  $('scale-value').textContent = `${fmt(settings.scale)}×`;
+  $('opacity-value').textContent = `${Math.round(settings.opacity * 100)}%`;
+  $('click-time-value').textContent = `${fmt(settings.clickTime)}×`;
+  $('trail-width-value').textContent = fmt(settings.trailWidth, 1);
+  $('bloom-value').textContent = fmt(settings.bloom);
 }
 
 function sendEnabled() {
@@ -88,17 +133,11 @@ function sendRefreshRate() {
   });
 }
 
-const QUALITY = Object.freeze({
-  low: { 'bloom.resolutionScale': 0.2, maxDpr: 1 },
-  balanced: { 'bloom.resolutionScale': 0.3, maxDpr: 2 },
-  high: { 'bloom.resolutionScale': 0.5, maxDpr: 2 },
-});
-
 function sendQuality() {
-  const preset = QUALITY[$('quality').value];
+  const preset = QUALITY_PRESETS[$('quality').value];
   send({
     type: 'setFxParams',
-    payload: { 'bloom.resolutionScale': preset['bloom.resolutionScale'] },
+    payload: { 'bloom.resolutionScale': preset.resolutionScale },
   });
   send({
     type: 'updateConfig',
@@ -108,6 +147,7 @@ function sendQuality() {
 
 async function sendVibrancyMaterial() {
   const material = $('vibrancy-material').value;
+  persistSettings();
   try {
     await invoke('set_panel_material', { material });
     showStatus('毛玻璃已更新');
@@ -118,29 +158,24 @@ async function sendVibrancyMaterial() {
 }
 
 function resetDefaults() {
-  $('enabled').checked = true;
-  $('scale').value = '1';
-  $('opacity').value = '0.35';
-  $('click-time').value = '1';
-  $('trail-always').checked = true;
-  $('trail-width').value = '4';
-  $('bloom').value = '1.7';
-  $('refresh-rate').value = '60';
-  $('quality').value = 'balanced';
-  $('vibrancy-material').value = 'hud';
-
-  $('scale-value').textContent = '1.00×';
-  $('opacity-value').textContent = '35%';
-  $('click-time-value').textContent = '1.00×';
-  $('trail-width-value').textContent = '4.0';
-  $('bloom-value').textContent = '1.70';
-
+  applyToDom(DEFAULT_SETTINGS);
+  saveSettings(DEFAULT_SETTINGS);
   emit('panel-command', { type: 'reset' });
-  invoke('set_panel_material', { material: 'hud' }).catch((error) => {
-    console.error('Failed to reset panel material', error);
-  });
+  invoke('set_panel_material', { material: DEFAULT_SETTINGS.vibrancyMaterial }).catch(
+    (error) => {
+      console.error('Failed to reset panel material', error);
+    },
+  );
   showStatus('已恢复默认');
 }
+
+// Restore the saved UI state and panel material on load.
+applyToDom(loadSettings());
+invoke('set_panel_material', { material: $('vibrancy-material').value }).catch(
+  (error) => {
+    console.error('Failed to restore panel material', error);
+  },
+);
 
 $('enabled').addEventListener('change', sendEnabled);
 $('scale').addEventListener('input', sendScale);

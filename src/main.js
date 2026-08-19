@@ -8,6 +8,7 @@ import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { BAClickFX } from 'ba-click-fx';
 import { applyFxPatches, FX_BASE_OPTIONS } from './fx-config.js';
+import { loadSettings, QUALITY_PRESETS } from './settings.js';
 
 const win = getCurrentWindow();
 const canvas = document.getElementById('fx');
@@ -200,6 +201,39 @@ function onMouseEvent(event) {
   }
 }
 
+function applySettings(settings) {
+  const quality = QUALITY_PRESETS[settings.quality] ?? QUALITY_PRESETS.balanced;
+  const config = {
+    clickEnabled: settings.enabled,
+    trailEnabled: settings.enabled,
+    scale: settings.scale,
+    clickTimeScale: settings.clickTime,
+    trailAlways: settings.trailAlways,
+    inputSamplingRate: settings.refreshRate,
+    maxDpr: quality.maxDpr,
+  };
+  const params = {
+    'bloom.intensity': settings.bloom,
+    'trail.width': settings.trailWidth,
+    'trail.geometryWidth': settings.trailWidth,
+    'bloom.resolutionScale': quality.resolutionScale,
+    'bloom.diskEmission': +(1.0 * settings.opacity).toFixed(3),
+    'bloom.diskEmissionAlpha': +(0.6 * settings.opacity).toFixed(3),
+    'shards.hdrIntensity': +(5.99 * settings.opacity).toFixed(3),
+  };
+
+  if (state.worker) {
+    post('updateConfig', config);
+    post('setFxParams', params);
+    return;
+  }
+
+  if (state.fx) {
+    state.fx.updateConfig(config);
+    state.fx.setFxParams(params);
+  }
+}
+
 function handlePanelCommand(command) {
   const { type, payload } = command;
 
@@ -233,6 +267,9 @@ function handlePanelCommand(command) {
 async function main() {
   await setupWindow();
   createRenderer();
+
+  // Restore persisted settings on startup (localStorage is shared across windows).
+  applySettings(loadSettings());
 
   await listen('mouse-event', (event) => {
     onMouseEvent(event.payload);
