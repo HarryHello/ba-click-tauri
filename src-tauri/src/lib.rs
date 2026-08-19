@@ -230,6 +230,7 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(generate_handler![log_message, set_panel_material])
         .on_window_event(|window, event| {
             // Closing the management panel should hide it, not destroy it —

@@ -15,6 +15,7 @@ core-foundation = "0.10"
 core-graphics = "0.25"
 window-vibrancy = "0.6"
 tauri-plugin-autostart = "2"
+tauri-plugin-opener = "2"
 
 [lib]
 name = "ba_click_tauri_lib"

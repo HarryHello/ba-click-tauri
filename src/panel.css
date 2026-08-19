@@ -56,6 +56,15 @@ h1 {
   gap: 12px;
 }
 
+.group.actions {
+  flex-direction: row;
+}
+
+.group.actions .secondary {
+  flex: 1;
+  margin-top: 0;
+}
+
 .field {
   display: flex;
   flex-direction: column;

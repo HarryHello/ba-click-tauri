@@ -1,5 +1,6 @@
 import { emit } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   enable as autostartEnable,
   disable as autostartDisable,
@@ -203,6 +204,30 @@ function resetDefaults() {
   showStatus('已恢复默认');
 }
 
+const REPO_URL = 'https://github.com/HarryHello/ba-click-tauri';
+const RELEASES_URL = `${REPO_URL}/releases`;
+
+// No auto-update: check for updates just opens the GitHub Releases page.
+async function checkUpdates() {
+  try {
+    await openUrl(RELEASES_URL);
+    showStatus('已打开更新页面');
+  } catch (error) {
+    console.error('Failed to open releases page', error);
+    showStatus('打开更新页面失败');
+  }
+}
+
+async function openRepository() {
+  try {
+    await openUrl(REPO_URL);
+    showStatus('已打开 GitHub 仓库');
+  } catch (error) {
+    console.error('Failed to open repository', error);
+    showStatus('打开仓库失败');
+  }
+}
+
 // Restore the saved UI state and panel material on load.
 applyToDom(loadSettings());
 autostartIsEnabled()
@@ -229,4 +254,6 @@ $('bloom').addEventListener('input', sendBloom);
 $('refresh-rate').addEventListener('change', sendRefreshRate);
 $('quality').addEventListener('change', sendQuality);
 $('vibrancy-material').addEventListener('change', sendVibrancyMaterial);
+$('check-updates').addEventListener('click', checkUpdates);
+$('open-repo').addEventListener('click', openRepository);
 $('reset').addEventListener('click', resetDefaults);
