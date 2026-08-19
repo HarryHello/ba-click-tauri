@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-autostart": "^2",
     "ba-click-fx": "file:./vendor/ba-click-fx"
   },
   "devDependencies": {

@@ -226,6 +226,10 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .invoke_handler(generate_handler![log_message, set_panel_material])
         .setup(|app| {
             // Hide the Dock icon: this is a pure overlay utility.

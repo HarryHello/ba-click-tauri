@@ -1,6 +1,11 @@
 import { emit } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import {
+  enable as autostartEnable,
+  disable as autostartDisable,
+  isEnabled as autostartIsEnabled,
+} from '@tauri-apps/plugin-autostart';
+import {
   DISK_EMISSION_ALPHA_SCALE,
   DISK_EMISSION_SCALE,
   SHARDS_HDR_SCALE,
@@ -170,6 +175,22 @@ async function sendVibrancyMaterial() {
   }
 }
 
+async function sendAutostart() {
+  const enabled = $('autostart').checked;
+  try {
+    if (enabled) {
+      await autostartEnable();
+    } else {
+      await autostartDisable();
+    }
+    showStatus(enabled ? '已开启开机自启' : '已关闭开机自启');
+  } catch (error) {
+    console.error('Failed to update autostart', error);
+    $('autostart').checked = !enabled; // revert the UI on failure
+    showStatus('开机自启设置失败');
+  }
+}
+
 function resetDefaults() {
   applyToDom(DEFAULT_SETTINGS);
   saveSettings(DEFAULT_SETTINGS);
@@ -184,6 +205,13 @@ function resetDefaults() {
 
 // Restore the saved UI state and panel material on load.
 applyToDom(loadSettings());
+autostartIsEnabled()
+  .then((enabled) => {
+    $('autostart').checked = enabled;
+  })
+  .catch((error) => {
+    console.error('Failed to read autostart state', error);
+  });
 invoke('set_panel_material', { material: $('vibrancy-material').value }).catch(
   (error) => {
     console.error('Failed to restore panel material', error);
@@ -191,6 +219,7 @@ invoke('set_panel_material', { material: $('vibrancy-material').value }).catch(
 );
 
 $('enabled').addEventListener('change', sendEnabled);
+$('autostart').addEventListener('change', sendAutostart);
 $('scale').addEventListener('input', sendScale);
 $('opacity').addEventListener('input', sendOpacity);
 $('click-time').addEventListener('input', sendClickTime);
