@@ -3,6 +3,7 @@ import { applyFxPatches, FX_BASE_OPTIONS } from './fx-config.js';
 
 let fx = null;
 let viewport = { width: 0, height: 0, dpr: 1 };
+let heartbeatTimer = null;
 
 function sendStatus(label, extra = {}) {
   const cfg = fx?.getConfig();
@@ -25,6 +26,14 @@ function sendStatus(label, extra = {}) {
 
 self.addEventListener('message', (event) => {
   const { type, payload } = event.data;
+
+  if (type === 'init') {
+    // Heartbeat so the main thread / log can tell whether the worker (and its
+    // render loop) is still alive after focus/space changes.
+    heartbeatTimer = setInterval(() => {
+      sendStatus('worker-heartbeat');
+    }, 10000);
+  }
 
   switch (type) {
     case 'init': {
@@ -115,6 +124,10 @@ self.addEventListener('message', (event) => {
       break;
 
     case 'destroy':
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
       fx?.destroy();
       fx = null;
       self.postMessage({ type: 'destroyed' });

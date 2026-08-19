@@ -1,7 +1,8 @@
 name: release
 
-# Builds the macOS DMG on GitHub's macOS runner, creates a GitHub Release,
-# and uploads the DMG as an asset. Runs when a tag like `v0.1.0` is pushed.
+# Builds macOS DMGs for both Apple Silicon (aarch64) and Intel (x86_64) on
+# GitHub's macOS runners, creates a GitHub Release, and uploads the DMGs.
+# Runs when a tag like `v0.1.0` is pushed.
 #
 # To sign & notarize (recommended for public distribution) configure secrets:
 #   APPLE_CERTIFICATE          base64 of your Developer ID Application .p12
@@ -21,7 +22,17 @@ permissions:
 
 jobs:
   build-and-release:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +44,8 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Install frontend deps
         run: npm ci
@@ -51,3 +64,4 @@ jobs:
           generateReleaseNotes: true
           releaseDraft: false
           prerelease: false
+          args: ${{ matrix.args }}

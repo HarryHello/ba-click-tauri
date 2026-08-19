@@ -4,17 +4,47 @@ use core_graphics::event::{
     CallbackResult,
 };
 use serde::Serialize;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::{generate_handler, AppHandle, Emitter, Manager, WebviewWindow};
 #[allow(deprecated)] // tauri-nspanel v2 re-exports the old cocoa wrappers
 use tauri_nspanel::{cocoa::appkit::NSWindowCollectionBehavior, WebviewWindowExt};
+use tauri_plugin_opener::OpenerExt;
 use window_vibrancy::{
     apply_vibrancy, clear_vibrancy, NSVisualEffectMaterial, NSVisualEffectState,
 };
+
+fn timestamp() -> String {
+    let duration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    format!("{}.{:03}", duration.as_secs(), duration.subsec_millis())
+}
+
+fn log_dir(app: &AppHandle) -> Option<PathBuf> {
+    app.path().app_log_dir().ok()
+}
+
+// Append one line to the app log file (~/Library/Logs/<bundle>/ba-click-tauri.log).
+fn append_log(app: &AppHandle, line: &str) {
+    let Some(dir) = log_dir(app) else { return };
+    let _ = fs::create_dir_all(&dir);
+    let path = dir.join("ba-click-tauri.log");
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
+        let _ = writeln!(file, "[{}] {line}", timestamp());
+    }
+}
+
+fn write_log(app: &AppHandle, msg: &str) {
+    append_log(app, msg);
+    println!("{msg}");
+}
 
 #[derive(Clone, Serialize)]
 struct MouseEventPayload {
@@ -46,9 +76,13 @@ fn event_kind_for(event_type: CGEventType) -> Option<&'static str> {
 }
 
 fn start_global_listener(app: AppHandle) {
+    write_log(&app, "[listener] starting global mouse event tap");
     thread::spawn(move || {
         let last_position = Arc::new(Mutex::new((0.0_f64, 0.0_f64)));
         let last_move_at = Arc::new(Mutex::new(Instant::now() - Duration::from_secs(1)));
+
+        // Clone for the event-tap callback so `app` can be used afterwards.
+        let tap_app = app.clone();
 
         let event_tap_result = CGEventTap::with_enabled(
             CGEventTapLocation::HID,
@@ -102,7 +136,7 @@ fn start_global_listener(app: AppHandle) {
                 }
 
                 if let Some(payload) = payload {
-                    let _ = app.emit("mouse-event", payload);
+                    let _ = tap_app.emit("mouse-event", payload);
                 }
 
                 CallbackResult::Keep
@@ -115,19 +149,24 @@ fn start_global_listener(app: AppHandle) {
         );
 
         if event_tap_result.is_err() {
-            eprintln!("ba-click-tauri: failed to start global mouse event tap");
+            write_log(&app, "[listener] FAILED to start global mouse event tap (check Accessibility permission)");
+        } else {
+            write_log(&app, "[listener] global mouse event tap running");
         }
     });
 }
 
 #[tauri::command]
-fn log_message(message: String) {
-    println!("[webview] {message}");
+fn log_message(app: AppHandle, message: String) {
+    let line = format!("[webview] {message}");
+    append_log(&app, &line);
+    eprintln!("{line}");
 }
 
 #[allow(non_upper_case_globals)]
 #[allow(deprecated)] // the cocoa re-export is deprecated but tauri-nspanel v2 still uses it
 fn init_panel(app_handle: &AppHandle) {
+    write_log(app_handle, "[overlay] converting window to NSPanel");
     let window: WebviewWindow = app_handle
         .get_webview_window("main")
         .expect("main window not found");
@@ -149,7 +188,10 @@ fn init_panel(app_handle: &AppHandle) {
             | NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces,
     );
 
-    println!("[info] overlay converted to NSWindowCollectionBehaviorFullScreenAuxiliary panel");
+    write_log(
+        app_handle,
+        "[overlay] converted to NSWindowCollectionBehaviorFullScreenAuxiliary panel",
+    );
 }
 
 fn parse_vibrancy_material(value: &str) -> NSVisualEffectMaterial {
@@ -172,8 +214,11 @@ fn apply_panel_vibrancy(app_handle: &AppHandle) {
         Some(NSVisualEffectState::Active),
         None,
     ) {
-        Ok(()) => println!("[info] applied native vibrancy to management panel"),
-        Err(error) => eprintln!("[info] failed to apply vibrancy to management panel: {error}"),
+        Ok(()) => write_log(app_handle, "[panel] applied native vibrancy"),
+        Err(error) => write_log(
+            app_handle,
+            &format!("[panel] failed to apply vibrancy: {error}"),
+        ),
     }
 }
 
@@ -190,13 +235,23 @@ fn set_panel_material(app: AppHandle, material: String) -> Result<(), String> {
         Some(NSVisualEffectState::Active),
         None,
     )
-    .map_err(|error| error.to_string())
+    .map_err(|error| error.to_string())?;
+
+    write_log(
+        &app,
+        &format!("[panel] set vibrancy material to '{material}'"),
+    );
+    Ok(())
 }
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "打开管理面板", true, None::<&str>)?;
+    let logs = MenuItem::with_id(app, "logs", "查看日志", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出应用", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &PredefinedMenuItem::separator(app)?, &quit])?;
+    let menu = Menu::with_items(
+        app,
+        &[&open, &logs, &PredefinedMenuItem::separator(app)?, &quit],
+    )?;
 
     let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/bar_icon_44.png"))?;
 
@@ -208,12 +263,23 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id().as_ref() {
             "open" => {
                 if let Some(panel) = app.get_webview_window("panel") {
+                    write_log(app, "[panel] open via tray");
                     let _ = panel.show();
                     let _ = panel.unminimize();
                     let _ = panel.set_focus();
                 }
             }
-            "quit" => app.exit(0),
+            "logs" => {
+                if let Some(dir) = log_dir(app) {
+                    let file = dir.join("ba-click-tauri.log");
+                    write_log(app, "[logs] revealing log file");
+                    let _ = app.opener().reveal_item_in_dir(&file);
+                }
+            }
+            "quit" => {
+                write_log(app, "[app] quit from tray");
+                app.exit(0);
+            }
             _ => {}
         })
         .build(app)?;
@@ -237,12 +303,17 @@ pub fn run() {
             // otherwise the tray "打开管理面板" can no longer find/reopen it.
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "panel" {
+                    write_log(
+                        window.app_handle(),
+                        "[panel] close requested -> hidden instead of destroyed",
+                    );
                     api.prevent_close();
                     let _ = window.hide();
                 }
             }
         })
         .setup(|app| {
+            write_log(app.handle(), "[app] startup");
             // Hide the Dock icon: this is a pure overlay utility.
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             init_panel(app.handle());

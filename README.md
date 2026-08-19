@@ -96,9 +96,9 @@ npm run tauri build
 
 **English / 中文**
 
-Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds the DMG and uploads it to a GitHub Release. Without further setup the app is **ad-hoc signed** and macOS Gatekeeper will block it on other Macs — for real distribution you must sign + notarize.
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds the DMG and uploads it to a GitHub Release. The workflow builds **both** Apple Silicon (`aarch64`) and Intel (`x86_64`) DMGs. Without further setup the app is **ad-hoc signed** and macOS Gatekeeper will block it on other Macs — for real distribution you must sign + notarize.
 
-打 `v*` 标签会触发 `.github/workflows/release.yml` 构建 DMG 并上传到 GitHub Release。不额外配置的话应用是 **ad-hoc 签名**，会被其他 Mac 的 Gatekeeper 拦截——要正式分发必须签名 + 公证。
+打 `v*` 标签会触发 `.github/workflows/release.yml` 构建 DMG 并上传到 GitHub Release。工作流会同时构建 Apple Silicon（`aarch64`）和 Intel（`x86_64`）两个 DMG。不额外配置的话应用是 **ad-hoc 签名**，会被其他 Mac 的 Gatekeeper 拦截——要正式分发必须签名 + 公证。
 
 ### 1. 证书（证书，付费开发者账号）
 Enroll in the Apple Developer Program and create a **Developer ID Application** certificate, then install it into Keychain.
@@ -231,6 +231,26 @@ pkill -f ba-click-tauri
 ---
 
 ## Troubleshooting / 故障排查
+
+### Logs / 日志
+
+The app writes a log file (release builds too), and a "查看日志" item in the menu bar reveals it in Finder:
+
+应用会把日志写入文件（发布版也有），菜单栏「查看日志」会在 Finder 中打开该文件：
+
+```
+~/Library/Logs/<bundle-identifier>/ba-click-tauri.log
+```
+
+The log records startup, the mouse listener, panel open/close, WebView JS errors, window focus/visibility changes and a 10s heartbeat (so you can tell whether the renderer is still alive after a focus change).
+
+日志会记录启动、鼠标监听、面板开关、WebView JS 异常、窗口聚焦/可见性变化，以及每 10 秒一次的心跳（用于判断切焦点后渲染是否还活着）。
+
+### Effect stops after switching focus / 切换焦点后特效消失
+
+Some macOS transparent-window redraw glitches are upstream Tauri/WKWebView issues ([#8255](https://github.com/tauri-apps/tauri/issues/8255), [#13415](https://github.com/tauri-apps/tauri/issues/13415)). We apply a best-effort workaround (nudge a redraw on focus/visibility regain) and guard against degenerate resize sizes. If it still reproduces, share the content of the log file above so the exact point can be diagnosed.
+
+macOS 透明窗口重绘问题部分源于上游 Tauri/WKWebView（[#8255](https://github.com/tauri-apps/tauri/issues/8255)、[#13415](https://github.com/tauri-apps/tauri/issues/13415)）。我们已加了「聚焦恢复时强制重绘」的兜底，并对异常尺寸 resize 做了保护。如果仍然复现，请把上面的日志文件内容发我，便于定位。
 
 ### Effect not triggering or no glow / 特效不触发或没有辉光
 

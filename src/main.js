@@ -96,6 +96,10 @@ async function onOverlayGeometryChange() {
     }
 
     const viewport = getViewport();
+    // Guard against degenerate/transitional sizes (e.g. during a Space/focus
+    // change) that could make the renderer resize into nothing.
+    if (viewport.width < 16 || viewport.height < 16) return;
+
     if (state.worker) {
       post('resize', viewport);
     } else {
@@ -104,6 +108,26 @@ async function onOverlayGeometryChange() {
   } catch (error) {
     console.error('Failed to refresh overlay viewport', error);
   }
+}
+
+// Minimal nudge that forces the WKWebView compositor to redraw (upstream macOS
+// transparent-window workaround for content freezing after a focus change).
+let lastRedrawAt = 0;
+async function forceRedraw() {
+  const now = Date.now();
+  if (now - lastRedrawAt < 3000) return;
+  lastRedrawAt = now;
+  try {
+    const size = await win.innerSize();
+    await win.setSize(new PhysicalSize(size.width + 1, size.height));
+    await win.setSize(size);
+  } catch (error) {
+    console.error('Failed to nudge overlay redraw', error);
+  }
+}
+
+function logFwd(message) {
+  invoke('log_message', { message }).catch(() => {});
 }
 
 async function logStatus(label, extra = {}) {
@@ -267,6 +291,42 @@ function handlePanelCommand(command) {
 }
 
 async function main() {
+  // Surface JS errors / focus / visibility changes into the log file so a
+  // release build can be diagnosed without a terminal.
+  window.addEventListener('error', (event) => {
+    logFwd(
+      `[js error] ${event.message} @ ${event.filename}:${event.lineno}:${event.colno}`,
+    );
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    logFwd(`[js unhandledrejection] ${reason?.stack || String(reason)}`);
+  });
+  document.addEventListener('visibilitychange', () => {
+    logFwd(`[focus] visibilitychange hidden=${document.hidden}`);
+    if (!document.hidden) {
+      forceRedraw(); // kick compositor back to life when it becomes visible
+    }
+  });
+  window.addEventListener('focus', () => {
+    logFwd('[focus] window focus');
+    forceRedraw();
+  });
+  window.addEventListener('blur', () => {
+    logFwd('[focus] window blur');
+  });
+  setInterval(() => {
+    const rect = canvas.getBoundingClientRect();
+    const vp = getViewport();
+    logFwd(
+      `[heartbeat] t=${Date.now()} size=${Math.round(rect.width)}x${Math.round(
+        rect.height,
+      )} dpr=${vp.dpr} worker=${state.worker ? 'alive' : 'none'} fx=${
+        state.fx ? 'alive' : 'none'
+      }`,
+    );
+  }, 10000);
+
   await setupWindow();
   createRenderer();
 
