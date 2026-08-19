@@ -38,11 +38,11 @@
         "alwaysOnTop": true,
         "resizable": false,
         "shadow": true,
-        "visible": true
+        "visible": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data: blob:; font-src 'self'; connect-src ipc: http://ipc.localhost; media-src 'self'"
     }
   },
   "bundle": {
