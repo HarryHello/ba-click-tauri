@@ -87,16 +87,8 @@ self.addEventListener('message', (event) => {
       break;
 
     case 'reset':
-      fx?.updateConfig({
-        clickEnabled: true,
-        trailEnabled: true,
-        trailAlways: true,
-        scale: 1,
-        opacity: 1,
-        clickTimeScale: 1,
-        inputSamplingRate: 60,
-        maxDpr: 2,
-      });
+      // Factory reset converges on the same defaults the panel would send
+      // (applyFxPatches applies DEFAULT_SETTINGS-based config + fx params).
       fx?.resetFxConfig();
       applyFxPatches(fx);
       fx?.resize(viewport.width, viewport.height, viewport.dpr);

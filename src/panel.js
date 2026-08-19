@@ -1,6 +1,11 @@
 import { emit } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import {
+  DISK_EMISSION_ALPHA_SCALE,
+  DISK_EMISSION_SCALE,
+  SHARDS_HDR_SCALE,
+} from './fx-config.js';
+import {
   DEFAULT_SETTINGS,
   loadSettings,
   saveSettings,
@@ -10,6 +15,7 @@ import {
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
 let statusTimer = null;
+let persistTimer = null;
 
 function showStatus(message) {
   statusEl.textContent = message;
@@ -19,9 +25,16 @@ function showStatus(message) {
   }, 1200);
 }
 
+// Sliders fire 'input' many times per drag; persist once after the burst
+// settles instead of writing localStorage on every event.
+function schedulePersist() {
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(persistSettings, 300);
+}
+
 function send(payload) {
   emit('panel-command', payload);
-  persistSettings();
+  schedulePersist();
   showStatus('已应用');
 }
 
@@ -91,9 +104,9 @@ function sendOpacity() {
   send({
     type: 'setFxParams',
     payload: {
-      'bloom.diskEmission': +(1.0 * value).toFixed(3),
-      'bloom.diskEmissionAlpha': +(0.6 * value).toFixed(3),
-      'shards.hdrIntensity': +(5.99 * value).toFixed(3),
+      'bloom.diskEmission': +(DISK_EMISSION_SCALE * value).toFixed(3),
+      'bloom.diskEmissionAlpha': +(DISK_EMISSION_ALPHA_SCALE * value).toFixed(3),
+      'shards.hdrIntensity': +(SHARDS_HDR_SCALE * value).toFixed(3),
     },
   });
 }

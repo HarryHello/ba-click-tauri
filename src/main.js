@@ -7,8 +7,13 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { BAClickFX } from 'ba-click-fx';
-import { applyFxPatches, FX_BASE_OPTIONS } from './fx-config.js';
-import { loadSettings, QUALITY_PRESETS } from './settings.js';
+import {
+  applyFxPatches,
+  buildFxConfig,
+  buildFxParams,
+  FX_BASE_OPTIONS,
+} from './fx-config.js';
+import { loadSettings } from './settings.js';
 
 const win = getCurrentWindow();
 const canvas = document.getElementById('fx');
@@ -75,6 +80,30 @@ async function setupWindow() {
   // it panics on NSPanel-backed Tauri windows (no `focusable` ivar on NSPanel).
   // Spaces behaviour is set natively in Rust (FullScreenAuxiliary +
   // CanJoinAllSpaces), so setVisibleOnAllWorkspaces is unnecessary too.
+}
+
+// Keep the coordinate mapping and the renderer viewport in sync when the
+// window is resized (resolution/DPR change) or moved (different monitor).
+async function onOverlayGeometryChange() {
+  try {
+    const monitor = await currentMonitor();
+    if (monitor) {
+      state.scale = monitor.scaleFactor;
+      state.origin = {
+        x: monitor.workArea.position.x,
+        y: monitor.workArea.position.y,
+      };
+    }
+
+    const viewport = getViewport();
+    if (state.worker) {
+      post('resize', viewport);
+    } else {
+      state.fx?.resize(viewport.width, viewport.height, viewport.dpr);
+    }
+  } catch (error) {
+    console.error('Failed to refresh overlay viewport', error);
+  }
 }
 
 async function logStatus(label, extra = {}) {
@@ -202,25 +231,8 @@ function onMouseEvent(event) {
 }
 
 function applySettings(settings) {
-  const quality = QUALITY_PRESETS[settings.quality] ?? QUALITY_PRESETS.balanced;
-  const config = {
-    clickEnabled: settings.enabled,
-    trailEnabled: settings.enabled,
-    scale: settings.scale,
-    clickTimeScale: settings.clickTime,
-    trailAlways: settings.trailAlways,
-    inputSamplingRate: settings.refreshRate,
-    maxDpr: quality.maxDpr,
-  };
-  const params = {
-    'bloom.intensity': settings.bloom,
-    'trail.width': settings.trailWidth,
-    'trail.geometryWidth': settings.trailWidth,
-    'bloom.resolutionScale': quality.resolutionScale,
-    'bloom.diskEmission': +(1.0 * settings.opacity).toFixed(3),
-    'bloom.diskEmissionAlpha': +(0.6 * settings.opacity).toFixed(3),
-    'shards.hdrIntensity': +(5.99 * settings.opacity).toFixed(3),
-  };
+  const config = buildFxConfig(settings);
+  const params = buildFxParams(settings);
 
   if (state.worker) {
     post('updateConfig', config);
@@ -249,16 +261,6 @@ function handlePanelCommand(command) {
   } else if (type === 'setFxParams') {
     state.fx.setFxParams(payload);
   } else if (type === 'reset') {
-    state.fx.updateConfig({
-      clickEnabled: true,
-      trailEnabled: true,
-      trailAlways: true,
-      scale: 1,
-      opacity: 1,
-      clickTimeScale: 1,
-      inputSamplingRate: 60,
-      maxDpr: 2,
-    });
     state.fx.resetFxConfig();
     applyFxPatches(state.fx);
   }
@@ -270,6 +272,9 @@ async function main() {
 
   // Restore persisted settings on startup (localStorage is shared across windows).
   applySettings(loadSettings());
+
+  await win.onResized(onOverlayGeometryChange);
+  await win.onMoved(onOverlayGeometryChange);
 
   await listen('mouse-event', (event) => {
     onMouseEvent(event.payload);
