@@ -82,6 +82,66 @@ This is required for the global mouse event tap.
 npm run tauri build
 ```
 
+**English:** The management panel starts **hidden** — open it from the menu bar icon (打开管理面板). The vendored `ba-click-fx` build lives in `vendor/ba-click-fx`; after tuning the fork, re-sync it with `npm run sync:vendor`.
+
+**中文：** 管理面板默认**不自动弹出**——从菜单栏图标「打开管理面板」呼出。`ba-click-fx` 的构建产物已 vendor 进 `vendor/ba-click-fx`；调整 fork 后执行 `npm run sync:vendor` 重新同步。
+
+---
+
+## Publish a DMG to GitHub / 发布 DMG 到 GitHub
+
+**English / 中文**
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds the DMG and uploads it to a GitHub Release. Without further setup the app is **ad-hoc signed** and macOS Gatekeeper will block it on other Macs — for real distribution you must sign + notarize.
+
+打 `v*` 标签会触发 `.github/workflows/release.yml` 构建 DMG 并上传到 GitHub Release。不额外配置的话应用是 **ad-hoc 签名**，会被其他 Mac 的 Gatekeeper 拦截——要正式分发必须签名 + 公证。
+
+### 1. 证书（证书，付费开发者账号）
+Enroll in the Apple Developer Program and create a **Developer ID Application** certificate, then install it into Keychain.
+注册 Apple Developer Program，创建 **Developer ID Application** 证书并装进钥匙串。
+
+### 2. 签名 / 构建（local: set `bundle.macOS.signingIdentity` in `tauri.conf.json`; CI: it reads `APPLE_SIGNING_IDENTITY`)
+```jsonc
+"bundle": {
+  "macOS": {
+    "signingIdentity": "Developer ID Application: 你的名字 (TEAMID)"
+  }
+}
+```
+
+### 3. 公证（Notarization，Tauri CLI 自动完成）
+Set these env vars when building (CI uses them from repository secrets):
+构建时设置以下环境变量（CI 从仓库 secrets 读取）：
+
+```bash
+# API-key approach (CI-friendly) / API Key 方式（适合 CI）
+export APPLE_API_KEY="xxxx"                 # base64 of AuthKey_XXXX.p8
+export APPLE_API_ISSUER="xxxx-…"
+export APPLE_API_KEY_PATH="/path/AuthKey_XXXX.p8"
+export APPLE_SIGNING_IDENTITY="Developer ID Application: … (TEAMID)"
+
+# or Apple ID / 或 Apple ID 方式
+export APPLE_ID="you@example.com"
+export APPLE_PASSWORD="xxxx-xxxx-xxxx-xxxx"  # app-specific password / 专用密码
+export APPLE_TEAM_ID="TEAMID"
+```
+
+### 4. 验证（verify）
+```bash
+xcrun stapler validate src-tauri/target/release/bundle/macos/ba-click-tauri.app
+spctl --assess --type execute -vv src-tauri/target/release/bundle/macos/ba-click-tauri.app
+# expect "accepted" / 应显示 accepted
+```
+
+### 5. 打标签发布（release via tag）
+```bash
+git tag v0.1.0 && git push origin v0.1.0   # triggers workflow / 触发工作流
+# or manually / 或手动：
+gh release create v0.1.0 src-tauri/target/release/bundle/dmg/ba-click-tauri_0.1.0_aarch64.dmg --generate-notes
+```
+
+> **Note / 注意:** the mandatory secrets for the workflow are listed at the top of `release.yml`. 工作流必需的 secrets 已列在 `release.yml` 顶部注释。
+
 ---
 
 ## How it works / 工作原理
@@ -109,18 +169,23 @@ npm run tauri build
 
 **中文：** 通过 **`src/fx-config.js`** 中的 `applyFxPatches()` 统一应用——它是 Worker 渲染与主线程 fallback 共同使用的唯一调参入口，调整效果只需修改这一个文件。
 
-| Parameter / 参数 | Value / 值 | Purpose / 作用 |
-|---|---|---|
-| `maxDpr` | 2 | Render at Retina resolution / 以 Retina 分辨率渲染 |
-| `bloom.resolutionScale` | 0.3 | Cheaper bloom buffers (performance) / 降低 Bloom 缓冲开销（性能） |
-| `bloom.diffusion` | 5 | Less blur work (performance) / 减少模糊计算（性能） |
-| `bloom.clickEmissionScale` | 0.4 | Click glow not too bright / 点击辉光不过亮 |
-| `bloom.diskEmission` | 1.0 | Soft, semi-transparent pale-blue centre disk / 柔和半透明淡蓝中心圆盘 |
-| `bloom.diskEmissionAlpha` | 0.6 | Disk stays translucent, not a white blob / 圆盘保持半透明，不是白块 |
-| `trail.width` / `trail.geometryWidth` | 4.0 | Thicker trail core / 拖尾核心更粗 |
-| `trail.outerGlowWidth` | 16 | Water-drop head glow / 水滴状头部辉光 |
-| `bloom.trailEmission` | 30 | Brighter head → clear thick-to-thin taper / 头部更亮，粗细渐变更明显 |
-| `overlayAlphaLimit` | 0.85 | Overall overlay stays semi-transparent / 整体悬浮层保持半透明 |
+**English:** The unified opacity (panel setting, default **35%**) applies **only to the click disk + shards**; the trail and the rings stay opaque. The factors below (`1.0 / 0.6 / 5.99`) are defined once in `fx-config.js` and scaled by opacity through `buildFxParams()`.
+
+**中文：** 统一不透明度（面板设置，默认 **35%**）**只作用于点击圆盘 + 三角碎片**，拖尾与圆环保持不透明。下面的系数（`1.0 / 0.6 / 5.99`）在 `fx-config.js` 中定义一次，经 `buildFxParams()` 按不透明度缩放。
+
+| Parameter / 参数 | Factor / 系数 | Default / 默认 | Purpose / 作用 |
+|---|---|---|---|
+| `maxDpr` | — | 2 | Render at Retina resolution / 以 Retina 分辨率渲染 |
+| `bloom.resolutionScale` | — | 0.3 | Cheaper bloom buffers (performance) / 降低 Bloom 缓冲开销（性能） |
+| `bloom.diffusion` | — | 5 | Less blur work (performance) / 减少模糊计算（性能） |
+| `bloom.clickEmissionScale` | — | 0.4 | Click glow not too bright / 点击辉光不过亮 |
+| `bloom.diskEmission` | `1.00 × opacity` | 0.35 | Soft, semi-transparent pale-blue centre disk / 柔和半透明淡蓝中心圆盘 |
+| `bloom.diskEmissionAlpha` | `0.60 × opacity` | 0.21 | Disk stays translucent, not a white blob / 圆盘保持半透明，不是白块 |
+| `shards.hdrIntensity` | `5.99 × opacity` | 2.096 | Shards follow the same opacity / 碎片辉光跟随同一不透明度 |
+| `trail.width` / `trail.geometryWidth` | — | 4.0 | Thicker trail core / 拖尾核心更粗 |
+| `trail.outerGlowWidth` | — | 16 | Water-drop head glow / 水滴状头部辉光 |
+| `bloom.trailEmission` | — | 30 | Brighter head → clear thick-to-thin taper / 头部更亮，粗细渐变更明显 |
+| `overlayAlphaLimit` | — | 0.85 | Overall overlay stays semi-transparent / 整体悬浮层保持半透明 |
 
 ---
 
@@ -210,13 +275,20 @@ ba-click-tauri/
 ├── src/
 │   ├── main.js          # window setup, global mouse wiring, worker + panel command forwarding
 │   │                    # 窗口设置、全局鼠标接线、Worker + 面板指令转发
-│   ├── fx-config.js     # shared BAClickFX options + tuning (single source of truth)
-│   │                    # 共享 BAClickFX 配置 + 调参（唯一入口）
+│   ├── fx-config.js     # shared BAClickFX options + tuning + settings→config/params mappers
+│   │                    # 共享 BAClickFX 配置 + 调参 + settings→config/params 映射（唯一入口）
 │   ├── fx-worker.js     # BAClickFX inside a Worker (WebGL2 OffscreenCanvas)
 │   │                    # Worker 内运行的 BAClickFX（WebGL2 OffscreenCanvas）
 │   ├── panel.js         # management panel logic -> emits panel-command events
 │   │                    # 管理面板逻辑 -> 发送 panel-command 事件
+│   ├── settings.js      # persisted panel settings (localStorage) / 面板设置持久化
 │   └── panel.css        # management panel styles / 管理面板样式
+├── tests/               # node unit tests for fx-config + settings / 纯函数单测
+├── scripts/
+│   └── vendor-fx.mjs    # re-copy vendored ba-click-fx (npm run sync:vendor)
+├── vendor/
+│   └── ba-click-fx/     # vendored ba-click-fx build (self-contained repo / 自包含)
+├── .github/workflows/   # CI + release (sign/notarize/upload DMG)
 ├── src-tauri/
 │   ├── src/
 │   │   └── lib.rs       # Rust backend + mouse-only CGEventTap + NSPanel + log bridge
