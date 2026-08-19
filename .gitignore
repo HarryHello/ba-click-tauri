@@ -1,5 +1,7 @@
 node_modules
 dist
+!vendor/ba-click-fx/dist/
+!vendor/ba-click-fx/dist/**
 src-tauri/target
 src-tauri/gen/schemas
 .DS_Store
