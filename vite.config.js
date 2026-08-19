@@ -9,7 +9,6 @@ export default defineConfig({
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
     target: 'es2021',
-    minify: false,
     sourcemap: false,
     rollupOptions: {
       input: {
