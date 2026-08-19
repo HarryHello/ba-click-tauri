@@ -1,6 +1,7 @@
 # ba-click-tauri
 
 > **English:** A macOS desktop overlay for the [ba-click-fx](https://github.com/CialloKing/ba-click-fx) web effect, built with **Tauri v2**.
+>
 > **中文：** 基于 **Tauri v2** 的 macOS 桌面悬浮特效层，复刻 [ba-click-fx](https://github.com/CialloKing/ba-click-fx) 网页版蔚蓝档案点击特效与光标拖尾。
 
 It creates a transparent, borderless, always-on-top, **click-through** window over the primary display and renders the effect on a **WebGL2 OffscreenCanvas running inside a Web Worker** — keeping rendering off the main thread for smooth input, without bundling Electron/Chromium.
