@@ -7,6 +7,8 @@ use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::TrayIconBuilder;
 use tauri::{generate_handler, AppHandle, Emitter, Manager, WebviewWindow};
 #[allow(deprecated)] // tauri-nspanel v2 re-exports the old cocoa wrappers
 use tauri_nspanel::{cocoa::appkit::NSWindowCollectionBehavior, WebviewWindowExt};
@@ -212,6 +214,35 @@ fn set_panel_material(app: AppHandle, material: String) -> Result<(), String> {
     .map_err(|error| error.to_string())
 }
 
+fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
+    let open = MenuItem::with_id(app, "open", "打开管理面板", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出应用", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open, &PredefinedMenuItem::separator(app)?, &quit])?;
+
+    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/bar_icon_44.png"))?;
+
+    let tray = TrayIconBuilder::with_id("main")
+        .icon(icon)
+        .icon_as_template(true)
+        .menu(&menu)
+        .show_menu_on_left_click(true)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => {
+                if let Some(panel) = app.get_webview_window("panel") {
+                    let _ = panel.show();
+                    let _ = panel.unminimize();
+                    let _ = panel.set_focus();
+                }
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .build(app)?;
+
+    app.manage(Mutex::new(tray));
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -222,6 +253,7 @@ pub fn run() {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             init_panel(app.handle());
             apply_panel_vibrancy(app.handle());
+            setup_tray(app)?;
             start_global_listener(app.handle().clone());
             Ok(())
         })

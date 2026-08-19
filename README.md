@@ -19,7 +19,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - Falls back to `canvas2d + software bloom` when WebGL2 is unavailable
 - NSPanel is `NonActivatingPanel`, so it never takes keyboard/IME focus
 - Converted to an **NSPanel** with `FullScreenAuxiliary` + `CanJoinAllSpaces`, so it can float above **fullscreen apps**
-- App runs as an `Accessory` (no Dock icon) since it is a pure overlay utility
+- App runs as an `Accessory` (no Dock icon) with a menu bar icon: open management panel / quit
 - Uses the original `ba-click-fx` npm package — no effect rewrite
 - Built-in management panel with native macOS vibrancy (frosted glass): unified effect size, opacity (disk + shards only), trail width, bloom, refresh rate and quality presets
 - Lightweight: system WKWebView + small Rust process
@@ -32,7 +32,7 @@ It creates a transparent, borderless, always-on-top, **click-through** window ov
 - WebGL2 不可用时回退到 `canvas2d + software bloom`
 - NSPanel 为 `NonActivatingPanel`，不会抢占键盘 / 输入法焦点
 - 使用 **NSPanel**（`FullScreenAuxiliary` + `CanJoinAllSpaces`），可覆盖在**全屏应用**之上
-- 以 `Accessory` 模式运行（无 Dock 图标），是纯悬浮工具
+- 以 `Accessory` 模式运行（无 Dock 图标），带菜单栏图标：打开管理面板 / 退出
 - 直接使用原版 `ba-click-fx` npm 包，不重写特效
 - 内置管理面板（原生 macOS 毛玻璃 vibrancy）：统一特效大小、不透明度（仅圆盘 + 碎片）、拖尾粗细、辉光、刷新率与画质预设
 - 轻量：系统 WKWebView + 小体积 Rust 进程
