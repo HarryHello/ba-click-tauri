@@ -1,6 +1,6 @@
 [package]
 name = "ba-click-tauri"
-version = "0.1.0"
+version = "0.1.1"
 description = "macOS click-through Tauri overlay for ba-click-fx"
 edition = "2021"
 
