@@ -1,7 +1,7 @@
 use core_foundation::runloop::CFRunLoop;
 use core_graphics::event::{
-    CallbackResult, CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement,
-    CGEventType,
+    CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement, CGEventType,
+    CallbackResult,
 };
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
@@ -22,6 +22,27 @@ struct MouseEventPayload {
     x: f64,
     y: f64,
     button: Option<String>,
+}
+
+fn button_for(event_type: CGEventType) -> Option<&'static str> {
+    match event_type {
+        CGEventType::LeftMouseDown | CGEventType::LeftMouseUp => Some("Left"),
+        CGEventType::RightMouseDown | CGEventType::RightMouseUp => Some("Right"),
+        CGEventType::OtherMouseDown | CGEventType::OtherMouseUp => Some("Middle"),
+        _ => None,
+    }
+}
+
+fn event_kind_for(event_type: CGEventType) -> Option<&'static str> {
+    match event_type {
+        CGEventType::LeftMouseDown | CGEventType::RightMouseDown | CGEventType::OtherMouseDown => {
+            Some("down")
+        }
+        CGEventType::LeftMouseUp | CGEventType::RightMouseUp | CGEventType::OtherMouseUp => {
+            Some("up")
+        }
+        _ => None,
+    }
 }
 
 fn start_global_listener(app: AppHandle) {
@@ -67,61 +88,17 @@ fn start_global_listener(app: AppHandle) {
                             });
                         }
                     }
-                    CGEventType::LeftMouseDown => {
-                        let (x, y) = *last_position.lock().unwrap();
-                        payload = Some(MouseEventPayload {
-                            kind: "down".to_string(),
-                            x,
-                            y,
-                            button: Some("Left".to_string()),
-                        });
+                    _ => {
+                        if let Some(kind) = event_kind_for(event_type) {
+                            let (x, y) = *last_position.lock().unwrap();
+                            payload = Some(MouseEventPayload {
+                                kind: kind.to_string(),
+                                x,
+                                y,
+                                button: button_for(event_type).map(str::to_string),
+                            });
+                        }
                     }
-                    CGEventType::LeftMouseUp => {
-                        let (x, y) = *last_position.lock().unwrap();
-                        payload = Some(MouseEventPayload {
-                            kind: "up".to_string(),
-                            x,
-                            y,
-                            button: Some("Left".to_string()),
-                        });
-                    }
-                    CGEventType::RightMouseDown => {
-                        let (x, y) = *last_position.lock().unwrap();
-                        payload = Some(MouseEventPayload {
-                            kind: "down".to_string(),
-                            x,
-                            y,
-                            button: Some("Right".to_string()),
-                        });
-                    }
-                    CGEventType::RightMouseUp => {
-                        let (x, y) = *last_position.lock().unwrap();
-                        payload = Some(MouseEventPayload {
-                            kind: "up".to_string(),
-                            x,
-                            y,
-                            button: Some("Right".to_string()),
-                        });
-                    }
-                    CGEventType::OtherMouseDown => {
-                        let (x, y) = *last_position.lock().unwrap();
-                        payload = Some(MouseEventPayload {
-                            kind: "down".to_string(),
-                            x,
-                            y,
-                            button: Some("Middle".to_string()),
-                        });
-                    }
-                    CGEventType::OtherMouseUp => {
-                        let (x, y) = *last_position.lock().unwrap();
-                        payload = Some(MouseEventPayload {
-                            kind: "up".to_string(),
-                            x,
-                            y,
-                            button: Some("Middle".to_string()),
-                        });
-                    }
-                    _ => {}
                 }
 
                 if let Some(payload) = payload {
@@ -154,7 +131,9 @@ fn init_panel(app_handle: &AppHandle) {
     let window: WebviewWindow = app_handle
         .get_webview_window("main")
         .expect("main window not found");
-    let panel = window.to_panel().expect("failed to convert window to panel");
+    let panel = window
+        .to_panel()
+        .expect("failed to convert window to panel");
 
     // Float above other windows, but never become the key/active window.
     const NSFloatWindowLevel: i32 = 4;
