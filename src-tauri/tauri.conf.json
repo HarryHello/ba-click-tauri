@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ba-click-tauri",
+  "productName": "BA Click Tauri",
   "version": "0.1.0",
   "identifier": "com.harryhell.ba-click-tauri",
   "build": {
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "ba-click-tauri",
+        "title": "BA Click Tauri",
         "width": 1280,
         "height": 800,
         "transparent": true,
