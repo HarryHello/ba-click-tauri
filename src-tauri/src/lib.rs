@@ -231,6 +231,16 @@ pub fn run() {
             None,
         ))
         .invoke_handler(generate_handler![log_message, set_panel_material])
+        .on_window_event(|window, event| {
+            // Closing the management panel should hide it, not destroy it —
+            // otherwise the tray "打开管理面板" can no longer find/reopen it.
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "panel" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             // Hide the Dock icon: this is a pure overlay utility.
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
