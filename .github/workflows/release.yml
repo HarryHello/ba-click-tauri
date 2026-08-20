@@ -72,13 +72,31 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Setup self-signed certificate
+        run: |
+          echo "${{ secrets.APPLE_CERTIFICATE }}" | base64 --decode > /tmp/BA-Click-Tauri-Signing.p12
+          KEYCHAIN="$HOME/Library/Keychains/ba-click-tauri-build.keychain-db"
+          security create-keychain -p "" "$KEYCHAIN"
+          security unlock-keychain -p "" "$KEYCHAIN"
+          security import /tmp/BA-Click-Tauri-Signing.p12 \
+            -k "$KEYCHAIN" \
+            -P "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" \
+            -T /usr/bin/codesign
+          security find-certificate -c "BA Click Tauri Signing" -p "$KEYCHAIN" > /tmp/ba-cert.pem
+          security add-trusted-cert -r trustRoot -k "$KEYCHAIN" /tmp/ba-cert.pem
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "" \
+            "$KEYCHAIN"
+          security list-keychains -d user -s \
+            "$KEYCHAIN" \
+            "$HOME/Library/Keychains/login.keychain-db"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
       - name: Build & release
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
