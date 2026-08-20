@@ -8,7 +8,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "sync:vendor": "node scripts/vendor-fx.mjs",
     "test": "node --test"
   },
   "dependencies": {

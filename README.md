@@ -87,9 +87,9 @@ This is required for the global mouse event tap.
 npm run tauri build
 ```
 
-**English:** The management panel starts **hidden** — open it from the menu bar icon (打开管理面板). The vendored `ba-click-fx` build lives in `vendor/ba-click-fx`; after tuning the fork, re-sync it with `npm run sync:vendor`.
+**English:** The management panel starts **hidden** — open it from the menu bar icon (打开管理面板). The vendored `ba-click-fx` build lives in `vendor/ba-click-fx` as a frozen, self-contained snapshot; it does not follow upstream automatically.
 
-**中文：** 管理面板默认**不自动弹出**——从菜单栏图标「打开管理面板」呼出。`ba-click-fx` 的构建产物已 vendor 进 `vendor/ba-click-fx`；调整 fork 后执行 `npm run sync:vendor` 重新同步。
+**中文：** 管理面板默认**不自动弹出**——从菜单栏图标「打开管理面板」呼出。`ba-click-fx` 的构建产物已 vendor 进 `vendor/ba-click-fx`，作为固定、自包含的快照；不会自动跟随上游更新。
 
 ---
 
@@ -316,8 +316,6 @@ ba-click-tauri/
 │   ├── settings.js      # persisted panel settings (localStorage) / 面板设置持久化
 │   └── panel.css        # management panel styles / 管理面板样式
 ├── tests/               # node unit tests for fx-config + settings / 纯函数单测
-├── scripts/
-│   └── vendor-fx.mjs    # re-copy vendored ba-click-fx (npm run sync:vendor)
 ├── vendor/
 │   └── ba-click-fx/     # vendored ba-click-fx build (self-contained repo / 自包含)
 ├── .github/workflows/   # CI + release (sign/notarize/upload DMG)
@@ -333,6 +331,6 @@ ba-click-tauri/
 
 ## License / 许可
 
-MIT — same as the upstream `ba-click-fx` project.
+MIT — same as the `ba-click-fx` project.
 
-MIT — 与上游 `ba-click-fx` 项目一致。
+MIT — 与 `ba-click-fx` 项目一致。
