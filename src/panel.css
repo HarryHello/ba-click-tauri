@@ -91,12 +91,17 @@ h1 {
 }
 
 .group.actions .primary {
+  -webkit-appearance: none;
+  appearance: none;
   flex: 1;
   margin-top: 0;
+  padding: 7px 10px;
   background: var(--accent);
-  border-color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
   color: #fff;
   font-weight: 600;
+  box-shadow: none;
   transition:
     background 0.15s ease,
     border-color 0.15s ease;
