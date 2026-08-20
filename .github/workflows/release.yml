@@ -48,6 +48,30 @@ jobs:
       - name: Install frontend deps
         run: npm ci
 
+      - name: Prepare release notes from CHANGELOG
+        id: release-notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          python3 - "$VERSION" <<'PY'
+          import pathlib, re, sys
+          version = sys.argv[1]
+          text = pathlib.Path('CHANGELOG.md').read_text(encoding='utf-8')
+          pattern = re.compile(rf'^## \[{re.escape(version)}\]', re.MULTILINE)
+          match = pattern.search(text)
+          if not match:
+              body = ''
+          else:
+              nxt = re.compile(r'^## \[', re.MULTILINE)
+              nxt_match = nxt.search(text, match.end())
+              body = text[match.end():nxt_match.start() if nxt_match else len(text)].strip()
+          pathlib.Path('/tmp/release-body.md').write_text(body + '\n', encoding='utf-8')
+          PY
+          {
+            echo "body<<EOF"
+            cat /tmp/release-body.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build & release
         uses: tauri-apps/tauri-action@v1
         env:
@@ -58,8 +82,8 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
-          releaseBody: ''
-          generateReleaseNotes: true
+          releaseBody: ${{ steps.release-notes.outputs.body }}
+          generateReleaseNotes: false
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
