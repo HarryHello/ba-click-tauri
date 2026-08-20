@@ -4,14 +4,12 @@ name: release
 # GitHub's macOS runners, creates a GitHub Release, and uploads the DMGs.
 # Runs when a tag like `v0.1.0` is pushed.
 #
-# To sign & notarize (recommended for public distribution) configure secrets:
-#   APPLE_CERTIFICATE          base64 of your Developer ID Application .p12
+# To sign with the self-signed certificate, configure these secrets:
+#   APPLE_CERTIFICATE          base64 of the exported .p12
 #   APPLE_CERTIFICATE_PASSWORD password of that .p12
-#   APPLE_SIGNING_IDENTITY     e.g. "Developer ID Application: Your Name (TEAMID)"
-#   APPLE_API_KEY              base64 of your App Store Connect AuthKey_XXXX.p8
-#   APPLE_API_ISSUER           your App Store Connect issuer ID
-#   APPLE_API_KEY_PATH         path where the .p8 is written (e.g. ~/.certs/AuthKey_XXXX.p8)
-# See https://tauri.app/distribute/sign/macos/ for details.
+#   APPLE_SIGNING_IDENTITY     e.g. "BA Click Tauri Signing"
+# (Notarization is not supported with a self-signed certificate; leave the
+# APPLE_API_* / APPLE_ID secrets unset.)
 on:
   push:
     tags: ['v*']
@@ -54,9 +52,9 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NOTE: unsigned builds only. To sign/notarize, re-add the APPLE_*
-          # env vars here only after the secrets are configured. Passing them
-          # as empty strings makes tauri-action try to import a certificate.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
