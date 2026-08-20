@@ -3,7 +3,7 @@ declare module 'ba-click-fx'
   export type BAClickFXInputFilter = (event: PointerEvent) => boolean;
   export type BAClickFXInputSource = 'dom' | 'manual';
   export type BAClickFXPointerType = 'mouse' | 'touch' | 'pen';
-  /** 保留旧版纯色相行为，或按 OKLCH 相对映射完整主题颜色。 */
+  /** 按 OKLCH 相对映射完整主题颜色，或选择纯色相兼容映射。 */
   export type BAClickFXThemeColorMode = 'hue-only' | 'relative-oklch';
   /** Scene 精确路径或普通网页透明覆盖层输出。 */
   export type BAClickFXOutputCompositing =
@@ -35,8 +35,7 @@ declare module 'ba-click-fx'
   export type BAClickFXBloomBackend = 'auto' | 'software' | 'webgl2' | 'native';
   export type BAClickFXResolvedBloomBackend =
     Exclude<BAClickFXBloomBackend, 'auto'> |
-    'webgpu' | 'legacy' | 'pending';
-  export type BAClickFXRenderingMode = 'enhanced' | 'legacy';
+    'webgpu' | 'pending';
 
   export interface BAClickFXBackendChangeDetail
   {
@@ -100,7 +99,7 @@ declare module 'ba-click-fx'
     opacity?: number;
     /** 主题色，默认游戏蓝 '#4ca7ff'；仅接受六位十六进制颜色。 */
     themeColor?: string;
-    /** 主题颜色映射模式；公共库默认为兼容旧版的 'hue-only'。 */
+    /** 主题颜色映射模式；公共库默认为 'relative-oklch'。 */
     themeColorMode?: BAClickFXThemeColorMode;
     /**
      * 输出合成，默认 'scene'。已知背景的精确路径应配合
@@ -159,12 +158,8 @@ declare module 'ba-click-fx'
     webgpuHdrWhiteStart?: number;
     /** 白核混合完成的 SDR 超额线性能量，范围 0.01..16，默认 5。 */
     webgpuHdrWhiteEnd?: number;
-    /** 渲染模式：'enhanced'（默认，完整 Bloom）或 'legacy'（Unity 材质主体 + Canvas shadowBlur）。 */
-    renderingMode?: BAClickFXRenderingMode;
     /** Bloom 后端。默认 'webgl2'；GPU 不可用时回退原生辉光，Software 仅显式选择。 */
     bloomBackend?: BAClickFXBloomBackend;
-    /** 兼容旧 API：true 等价于 'software'，false 等价于 'native'。 */
-    softwareBloomEnabled?: boolean;
     /** 在透明组内合成多 Canvas 后再覆盖页面，默认 false；已有 Canvas target 不支持。 */
     isolatedCompositing?: boolean;
     /**
@@ -216,10 +211,7 @@ declare module 'ba-click-fx'
     webgpuHdrWhiteCore: number;
     webgpuHdrWhiteStart: number;
     webgpuHdrWhiteEnd: number;
-    renderingMode: BAClickFXRenderingMode;
     bloomBackend: BAClickFXBloomBackend;
-    /** 兼容旧 API；仅显式选择软件 Bloom 时为 true。 */
-    softwareBloomEnabled: boolean;
     isolatedCompositing: boolean;
     lightBackgroundContrastAlpha: number;
     maxDpr: number;
@@ -286,13 +278,6 @@ declare module 'ba-click-fx'
     readonly step: number;
   }
 
-  /** 各渲染模式重置时应恢复的参数基线。 */
-  export interface BAClickFXParamModeDefaults
-  {
-    readonly enhanced: number | boolean;
-    readonly legacy: number | boolean;
-  }
-
   /** 可安全交给宿主配置界面的只读标量参数描述。 */
   export interface BAClickFXParamDescriptor
   {
@@ -312,7 +297,6 @@ declare module 'ba-click-fx'
     readonly display?: Readonly<BAClickFXParamDisplay>;
     /** 需要在同一界面中协同校验或展示的参数路径。 */
     readonly linkedParams: readonly string[];
-    readonly modeDefaults: Readonly<BAClickFXParamModeDefaults>;
   }
 
   export interface BAClickFXParamRenameMigration
@@ -417,7 +401,7 @@ declare module 'ba-click-fx'
 
   export const CONFIG: Readonly<BAClickFXConfig>;
   export const DEFAULT_THEME_COLOR: '#4ca7ff';
-  export const DEFAULT_THEME_COLOR_MODE: 'hue-only';
+  export const DEFAULT_THEME_COLOR_MODE: 'relative-oklch';
   export const FX_PARAM_SCHEMA_VERSION: 2;
   export const FX_PARAM_SCHEMA: readonly BAClickFXParamDescriptor[];
   export const FX_PARAM_MIGRATIONS: readonly BAClickFXParamMigration[];
@@ -470,7 +454,7 @@ declare module 'ba-click-fx'
 
     /**
      * 提供与特效下方实际画面逐像素匹配的已解码不透明栅格合成参考。纯
-     * WebGL2 与 WebGL2 Bloom 在同一线性 HDR Scene 合成；Native / Legacy
+     * WebGL2 与 WebGL2 Bloom 在同一线性 HDR Scene 合成；Native
      * 使用 Canvas Final Pass。
      * 当前仅支持居中 cover。调用方负责图片 CORS，并须在替换或销毁前
      * 保持可释放源有效以支持 Context 恢复。Canvas、Video 等动态源上传
@@ -488,9 +472,9 @@ declare module 'ba-click-fx'
 
     /**
      * 运行时更新合成合同、输入来源/采样率、时间倍率、渲染后端、DPR 与触摸行为。
-     * 直接 OffscreenCanvas 会忽略需要切换 Canvas context 类型的后端或渲染模式。
+     * 直接 OffscreenCanvas 遇到需要切换 Canvas context 类型的后端或渲染模式时抛错。
      */
-    updateConfig(overrides: BAClickFXUpdateOptions): void;
+    updateConfig(overrides: BAClickFXUpdateOptions): BAClickFXConfigSnapshot;
 
     /** 设置并保存主题色；传入空字符串或非法值恢复默认游戏蓝。 */
     setThemeColor(hex: string): void;
@@ -516,7 +500,7 @@ declare module 'ba-click-fx'
     /** 返回当前完整特效配置的深拷贝（与 UNITY_FX_TOUCH 同结构）。 */
     getFxConfig(): Record<string, unknown>;
 
-    /** 重置所有特效参数为当前 Enhanced 或 Legacy 模式的默认基线。 */
+    /** 重置所有特效参数为 Unity 默认基线。 */
     resetFxConfig(): void;
 
     clearTrail(): void;

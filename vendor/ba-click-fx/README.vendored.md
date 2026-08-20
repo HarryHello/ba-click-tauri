@@ -1,7 +1,7 @@
 # ba-click-fx (vendored)
 
 This directory is a **vendored copy** of the `ba-click-fx` npm package
-(fork: `HarryHello/ba-click-fx`, v1.3.0) — including the locally modified
+(fork: `HarryHello/ba-click-fx`, v1.3.1) — including the locally modified
 `dist/` build where the click disk color is lightened to pale blue.
 
 ## Why vendored
@@ -12,7 +12,8 @@ or in CI. Shipping the built artifact here makes `npm ci && npm run tauri build`
 self-contained.
 
 Only the files that are actually published (per the package `files` field) are
-kept: the four `dist/` bundles plus `package.json`, `LICENSE`, `README*` and
+kept: `dist/ba-click-fx.js`, `dist/config.js`, `dist/worker.js` and their
+`.d.ts` files, plus `package.json`, `LICENSE`, `README*` and
 `THIRD_PARTY_NOTICES.md`. The vendored `package.json` is sanitized by
 `npm run sync:vendor` (devDependencies/scripts/engines stripped — npm would
 otherwise install the upstream devDeps like typescript/vite into this repo).

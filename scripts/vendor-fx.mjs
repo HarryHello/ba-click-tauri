@@ -14,9 +14,11 @@ const dst = join(repoRoot, 'vendor', 'ba-click-fx');
 
 const distFiles = [
   'ba-click-fx.js',
-  'ba-click-fx.cjs',
-  'ba-click-fx.iife.js',
   'ba-click-fx.d.ts',
+  'config.js',
+  'config.d.ts',
+  'worker.js',
+  'worker.d.ts',
 ];
 const extraFiles = [
   'package.json',
