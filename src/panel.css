@@ -46,6 +46,36 @@ h1 {
   letter-spacing: 0.02em;
 }
 
+.perm-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 149, 0, 0.14);
+  border: 1px solid rgba(255, 149, 0, 0.35);
+  color: #ffb340;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* `hidden` must win over `display:flex` above. */
+.perm-warning[hidden] {
+  display: none;
+}
+
+.perm-warning button {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
 .group {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid transparent;
@@ -60,9 +90,21 @@ h1 {
   flex-direction: row;
 }
 
-.group.actions .secondary {
+.group.actions .primary {
   flex: 1;
   margin-top: 0;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.group.actions .primary:hover {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
 }
 
 .field {

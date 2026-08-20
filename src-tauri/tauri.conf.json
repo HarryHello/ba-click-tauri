@@ -29,7 +29,7 @@
       },
       {
         "label": "panel",
-        "title": "BA Click FX · 管理",
+        "title": "BA Click Tauri · 管理",
         "url": "panel.html",
         "width": 360,
         "height": 560,

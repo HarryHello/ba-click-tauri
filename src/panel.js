@@ -243,6 +243,24 @@ invoke('set_panel_material', { material: $('vibrancy-material').value }).catch(
   },
 );
 
+// Input Monitoring (TCC) can silently drop on every ad-hoc rebuild. Show a
+// clear warning + a shortcut to System Settings when it is not granted.
+async function refreshPermissionWarning() {
+  try {
+    const granted = await invoke('input_monitoring_enabled');
+    $('perm-warning').hidden = granted;
+  } catch (error) {
+    console.error('Failed to check input monitoring permission', error);
+  }
+}
+refreshPermissionWarning();
+window.addEventListener('focus', refreshPermissionWarning);
+$('open-perm-settings').addEventListener('click', () => {
+  invoke('open_input_monitoring_settings').catch((error) => {
+    console.error('Failed to open permission settings', error);
+  });
+});
+
 $('enabled').addEventListener('change', sendEnabled);
 $('autostart').addEventListener('change', sendAutostart);
 $('scale').addEventListener('input', sendScale);

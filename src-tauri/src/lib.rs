@@ -7,6 +7,7 @@ use serde::Serialize;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -19,6 +20,13 @@ use tauri_plugin_opener::OpenerExt;
 use window_vibrancy::{
     apply_vibrancy, clear_vibrancy, NSVisualEffectMaterial, NSVisualEffectState,
 };
+
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    // macOS 10.15+ Input Monitoring (listen event) permission checks.
+    fn CGPreflightListenEventAccess() -> bool;
+    fn CGRequestListenEventAccess() -> bool;
+}
 
 fn timestamp() -> String {
     let duration = SystemTime::now()
@@ -78,6 +86,23 @@ fn event_kind_for(event_type: CGEventType) -> Option<&'static str> {
 fn start_global_listener(app: AppHandle) {
     write_log(&app, "[listener] starting global mouse event tap");
     thread::spawn(move || {
+        // Ad-hoc signed builds get a new code signature on every rebuild, which
+        // makes macOS treat them as a new app for Input Monitoring (TCC).
+        // Request explicitly so the user gets the system prompt instead of a
+        // silent failure.
+        let granted = unsafe { CGPreflightListenEventAccess() };
+        if !granted {
+            write_log(
+                &app,
+                "[listener] Input Monitoring not granted, requesting access...",
+            );
+            let _ = unsafe { CGRequestListenEventAccess() };
+        }
+        write_log(
+            &app,
+            &format!("[listener] input monitoring preflight={granted}"),
+        );
+
         let last_position = Arc::new(Mutex::new((0.0_f64, 0.0_f64)));
         let last_move_at = Arc::new(Mutex::new(Instant::now() - Duration::from_secs(1)));
 
@@ -161,6 +186,20 @@ fn log_message(app: AppHandle, message: String) {
     let line = format!("[webview] {message}");
     append_log(&app, &line);
     eprintln!("{line}");
+}
+
+#[tauri::command]
+fn input_monitoring_enabled() -> bool {
+    unsafe { CGPreflightListenEventAccess() }
+}
+
+#[tauri::command]
+fn open_input_monitoring_settings() -> Result<(), String> {
+    Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+        .status()
+        .map(|_| ())
+        .map_err(|error| error.to_string())
 }
 
 #[allow(non_upper_case_globals)]
@@ -297,7 +336,12 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(generate_handler![log_message, set_panel_material])
+        .invoke_handler(generate_handler![
+            log_message,
+            set_panel_material,
+            input_monitoring_enabled,
+            open_input_monitoring_settings
+        ])
         .on_window_event(|window, event| {
             // Closing the management panel should hide it, not destroy it —
             // otherwise the tray "打开管理面板" can no longer find/reopen it.

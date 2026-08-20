@@ -3,12 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BA Click FX · 管理</title>
+    <title>BA Click Tauri · 管理</title>
     <link rel="stylesheet" href="/src/panel.css" />
   </head>
   <body>
     <main class="panel">
-      <h1>BA Click FX</h1>
+      <h1>BA Click Tauri</h1>
+
+      <div id="perm-warning" class="perm-warning" hidden>
+        <span>需要「输入监控」权限才能读取鼠标事件。</span>
+        <button id="open-perm-settings" type="button">去开启</button>
+      </div>
 
       <section class="group">
         <label class="switch">
@@ -122,8 +127,8 @@
       </section>
 
       <section class="group actions">
-        <button id="check-updates" class="secondary" type="button">检查更新</button>
-        <button id="open-repo" class="secondary" type="button">GitHub 仓库</button>
+        <button id="check-updates" class="primary" type="button">检查更新</button>
+        <button id="open-repo" class="primary" type="button">GitHub 仓库</button>
       </section>
 
       <button id="reset" class="secondary" type="button">恢复默认设置</button>

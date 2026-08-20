@@ -249,16 +249,23 @@ The log records startup, the mouse listener, panel open/close, WebView JS errors
 
 ### Effect stops after switching focus / 切换焦点后特效消失
 
-Some macOS transparent-window redraw glitches are upstream Tauri/WKWebView issues ([#8255](https://github.com/tauri-apps/tauri/issues/8255), [#13415](https://github.com/tauri-apps/tauri/issues/13415)). We apply a best-effort workaround (nudge a redraw on focus/visibility regain) and guard against degenerate resize sizes. If it still reproduces, share the content of the log file above so the exact point can be diagnosed.
+The usual cause is **Input Monitoring (TCC) permission** being lost, not the renderer. This app is **ad-hoc signed**; every rebuild changes the binary code signature, so macOS treats each new build as a different app and the old Input Monitoring grant no longer applies. The worker may keep running while the global mouse tap silently stops.
 
-macOS 透明窗口重绘问题部分源于上游 Tauri/WKWebView（[#8255](https://github.com/tauri-apps/tauri/issues/8255)、[#13415](https://github.com/tauri-apps/tauri/issues/13415)）。我们已加了「聚焦恢复时强制重绘」的兜底，并对异常尺寸 resize 做了保护。如果仍然复现，请把上面的日志文件内容发我，便于定位。
+这种情况通常是**输入监控（TCC）权限**丢失，而不是渲染问题。应用是 **ad-hoc 签名**，每次重新构建二进制签名都变，macOS 会把它当作新应用，旧的输入监控授权不再生效，但 worker 仍在跑，全局鼠标监听却悄悄失效。
+
+- The panel shows a yellow warning + a "去开启" button when permission is missing.
+  面板在权限缺失时会显示黄色提示条和「去开启」按钮。
+- For ad-hoc builds you must **re-grant Input Monitoring after each update**: System Settings → Privacy & Security → Input Monitoring → remove the stale entry and add the new app.
+  ad-hoc 构建每次更新后需要**重新授予输入监控权限**：系统设置 → 隐私与安全性 → 输入监控 → 删掉旧条目并添加新 App。
+- With a **Developer ID** signed build, the permission is tied to a stable Team ID + bundle ID and survives updates.
+  使用 **Developer ID** 正式签名后，权限绑定稳定的 Team ID + Bundle ID，更新后无需重新授权。
 
 ### Effect not triggering or no glow / 特效不触发或没有辉光
 
-- Make sure the app has **Accessibility** permission (System Settings → Privacy & Security → Accessibility). The global mouse listener depends on it.
-  请确认已授予**辅助功能（Accessibility）**权限，全局鼠标监听依赖它。
-- Check the terminal `[webview] worker-init` line to confirm the render path.
-  查看终端 `[webview] worker-init` 日志确认渲染路径。
+- Make sure the app has **Input Monitoring** permission (System Settings → Privacy & Security → Input Monitoring). The global mouse event tap depends on it.
+  请确认已授予**输入监控（Input Monitoring）**权限，全局鼠标事件监听依赖它。
+- Check the terminal/log `[listener] input monitoring preflight=...` to confirm permission state.
+  查看终端/日志里的 `[listener] input monitoring preflight=...` 确认权限状态。
 - Effect look/glow/brightness is tuned in `src/fx-config.js`. Frontend changes hot-reload with `npm run tauri dev`.
   特效外观/辉光/亮度在 `src/fx-config.js` 中调整，前端改动会由 `npm run tauri dev` 热加载。
 
