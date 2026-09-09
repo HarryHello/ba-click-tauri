@@ -1,5 +1,9 @@
 # ba-click-tauri
 
+> ⚠️ **English:** This Tauri version is **no longer recommended** — the native Swift + Metal rewrite, [ba-click-mac](https://github.com/HarryHello/ba-click-mac), is faster, lighter (no WebView) and has feature parity (multi-display, updates, battery saver). New users should use [ba-click-mac](https://github.com/HarryHello/ba-click-mac).
+>
+> **中文：** Tauri 版**不再推荐**使用——原生 Swift + Metal 重写版 [ba-click-mac](https://github.com/HarryHello/ba-click-mac) 更快、更轻量（无 WebView），功能已对齐（多显示器、检查更新、电池节能）。新用户请使用 [ba-click-mac](https://github.com/HarryHello/ba-click-mac)。
+
 > **English:** A macOS desktop overlay for the [ba-click-fx](https://github.com/CialloKing/ba-click-fx) web effect, built with **Tauri v2**.
 >
 > **中文：** 基于 **Tauri v2** 的 macOS 桌面悬浮特效层，复刻 [ba-click-fx](https://github.com/CialloKing/ba-click-fx) 网页版蔚蓝档案点击特效与光标拖尾。
