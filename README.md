@@ -214,6 +214,7 @@ During dev, the terminal prints a status message from the Worker:
 - `webgl2Probe: false` 或 `resolved` 最终为 `canvas2d/native` → WebGL2 不可用，回退 Canvas 2D + 软件 Bloom。
 
 > **Note / 注意:** right after `worker-init`, `resolved` may briefly show `pending/native` before the first frame renders. That is expected.
+>
 > `worker-init` 刚出现时，`resolved` 可能短暂显示 `pending/native`，这是首帧渲染前的正常状态。
 
 ---
